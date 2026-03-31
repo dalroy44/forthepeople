@@ -254,18 +254,28 @@ export async function executeNewsAction(
       case "leaders": {
         const data = extractedData as Record<string, unknown>;
         if (data.personName && data.role) {
-          await prisma.leader.create({
-            data: {
-              districtId,
-              name: data.personName as string,
-              role: data.role as string,
-              tier: (data.tier as number) ?? 3,
-              party: (data.party as string) ?? null,
-              since: new Date().getFullYear().toString(),
-              source: articleUrl,
-            },
+          const name = (data.personName as string).trim();
+          const role = (data.role as string).trim();
+          // Skip duplicates: check if this name+role combo already exists for this district
+          const existing = await prisma.leader.findFirst({
+            where: { districtId, name, role },
           });
-          console.log(`[NewsAction] ✅ Added Leader: ${data.personName} as ${data.role}`);
+          if (!existing) {
+            await prisma.leader.create({
+              data: {
+                districtId,
+                name,
+                role,
+                tier: (data.tier as number) ?? 3,
+                party: (data.party as string) ?? null,
+                since: new Date().getFullYear().toString(),
+                source: articleUrl,
+              },
+            });
+            console.log(`[NewsAction] ✅ Added Leader: ${name} as ${role}`);
+          } else {
+            console.log(`[NewsAction] ⏭️  Skipped duplicate Leader: ${name} as ${role}`);
+          }
         }
         break;
       }
