@@ -17,7 +17,7 @@ Live URL:       https://forthepeople.in
 Vercel Scope:   zurvoapps-projects (zurvoapp Pro account)
 Builder:        Jayanth M B, Karnataka, India
 Project ID:     FTP-JMB-2026-IN
-Pilot Districts: Mandya (Karnataka), Mysuru (Karnataka), Bengaluru Urban (Karnataka)
+Pilot Districts: Mandya (Karnataka), Mysuru (Karnataka), Bengaluru Urban (Karnataka), New Delhi (Delhi)
 Scalable To:    All 780+ districts across 28 states & 8 UTs
 Languages:      English + Regional (Kannada for pilot, expandable via next-intl)
 Theme:          LIGHT — minimal, clean, modern, airy
@@ -177,10 +177,14 @@ LOCK BEHAVIOR:
   Active district:  Full data, clickable
   Locked district:  Grayed out, "Coming Soon"
 
-3 ACTIVE PILOT DISTRICTS:
+7 ACTIVE PILOT DISTRICTS:
   Mandya (ಮಂಡ್ಯ)          — "Sugar Capital of Karnataka"
   Mysuru (ಮೈಸೂರು)         — "City of Palaces"
   Bengaluru Urban (ಬೆಂಗಳೂರು) — "Silicon Valley of India"
+  New Delhi (नई दिल्ली)    — "Seat of India's Government"
+  Mumbai (मुंबई)           — "Financial Capital of India"
+  Kolkata (কলকাতা)         — "City of Joy"
+  Chennai (சென்னை)         — "Gateway to South India"
 
 MANDYA TALUKS (7):
   1. Mandya        — "Sugar Capital of Karnataka"
@@ -572,6 +576,7 @@ Shown on: Homepage district cards, District overview page header.
 Mandya:          59.0 / 100  (C+)
 Mysuru:          52.8 / 100  (C+)
 Bengaluru Urban: 55.4 / 100  (C+)
+Delhi (New Delhi): [pending — run health score calculation after testing]
 ```
 
 ---
@@ -1389,9 +1394,10 @@ Post-launch: Feedback            COMPLETE
   - FeedbackModal + floating button + admin management
 
 Post-launch: Scale               COMPLETE
-  - 3 pilot districts active (Mandya, Mysuru, Bengaluru Urban)
+  - 4 pilot districts active (Mandya, Mysuru, Bengaluru Urban + New Delhi)
+  - 10 additional Delhi districts ready to activate
   - All scrapers DB-driven (not hardcoded)
-  - Health scores pre-computed for all 3 districts
+  - Health scores pre-computed for all 3 Karnataka districts
 
 Post-launch: Feature Voting      COMPLETE
   - 23 feature requests seeded

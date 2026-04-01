@@ -17,6 +17,20 @@ const OWM_KEY = process.env.OPENWEATHER_API_KEY;
 const OWM_CITY_OVERRIDE: Record<string, string> = {
   "bengaluru-urban": "Bangalore",
   "mysuru":          "Mysore",
+  "new-delhi":       "New Delhi",
+  "central-delhi":   "New Delhi",
+  "north-delhi":     "New Delhi",
+  "north-west-delhi":"New Delhi",
+  "north-east-delhi":"New Delhi",
+  "east-delhi":      "New Delhi",
+  "south-delhi":     "New Delhi",
+  "south-west-delhi":"New Delhi",
+  "south-east-delhi":"New Delhi",
+  "west-delhi":      "New Delhi",
+  "shahdara":        "New Delhi",
+  "mumbai":          "Mumbai",
+  "kolkata":         "Kolkata",
+  "chennai":         "Chennai",
 };
 
 interface OWMResponse {

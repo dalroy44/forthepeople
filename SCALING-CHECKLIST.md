@@ -2,7 +2,7 @@
 # How to Add New Districts and States
 #
 # Generated: 2026-03-29
-# Status: Pilot (Karnataka: Mandya ✅ | Mysuru ✅ | Bengaluru Urban ✅)
+# Status: Pilot (Karnataka: Mandya ✅ | Mysuru ✅ | Bengaluru Urban ✅ | Delhi: New Delhi ✅ | Maharashtra: Mumbai ✅ | West Bengal: Kolkata ✅ | Tamil Nadu: Chennai ✅)
 # ─────────────────────────────────────────────────────────────────────
 
 ---
@@ -470,5 +470,28 @@ npx tsx prisma/seed-features.ts
 
 ---
 
-*Last updated: 2026-03-29*
-*All 3 pilot districts (Mandya, Mysuru, Bengaluru Urban) active and verified.*
+## DELHI EXPANSION STATUS (April 2026)
+- [x] State hierarchy seeded (Delhi UT + 11 districts + subdivisions)
+- [x] Static constants updated
+- [x] Weather/crop overrides configured
+- [x] New Delhi district: full data seeded
+- [x] Activation script created (scripts/activate-delhi-districts.ts)
+- [x] Other 10 districts: light data seeded (scripts/seed-delhi-other-districts.ts)
+- [ ] Local testing verified
+- [ ] Production deployment
+- [ ] Remaining 10 districts activated
+
+## MULTI-STATE EXPANSION (April 2026)
+- [x] Maharashtra: Mumbai seeded + activated
+- [x] West Bengal: Kolkata seeded + activated
+- [x] Tamil Nadu: Chennai seeded + activated
+- [x] Regional fonts added (Tamil, Bengali)
+- [x] Weather/crop overrides configured
+- [x] Activation script created (scripts/activate-expansion-districts.ts)
+- [ ] Local testing verified
+- [ ] Production deployment
+
+---
+
+*Last updated: 2026-04-01*
+*7 pilot districts active across 5 states/UTs (Mandya, Mysuru, Bengaluru Urban, New Delhi, Mumbai, Kolkata, Chennai). 10 Delhi districts ready to activate.*

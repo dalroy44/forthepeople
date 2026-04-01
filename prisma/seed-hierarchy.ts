@@ -14,7 +14,7 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🌱 Upserting Karnataka hierarchy (no deletes)...");
+  console.log("🌱 Upserting hierarchy (no deletes)...");
 
   // ── Karnataka State ──────────────────────────────────────
   const karnataka = await prisma.state.upsert({
@@ -87,6 +87,425 @@ async function main() {
         talukCount: def.talukCount, villageCount: def.villageCount,
         literacy: def.literacy, sexRatio: def.sexRatio,
         density: def.density, avgRainfall: def.avgRainfall,
+      },
+    });
+
+    for (const t of def.taluks) {
+      await prisma.taluk.upsert({
+        where: { districtId_slug: { districtId: district.id, slug: t.slug } },
+        update: {},
+        create: {
+          districtId: district.id,
+          name: t.name, nameLocal: t.nameLocal, slug: t.slug,
+          tagline: t.tagline,
+          population: t.pop, area: t.area, villageCount: t.villages,
+        },
+      });
+    }
+    console.log(`✓ ${def.name} + ${def.taluks.length} taluks`);
+  }
+
+  // ── Delhi (Union Territory) ──────────────────────────────
+  console.log("\n🌱 Upserting Delhi (UT) hierarchy...");
+
+  const delhi = await prisma.state.upsert({
+    where: { slug: "delhi" },
+    update: { active: true },
+    create: { name: "Delhi", nameLocal: "दिल्ली", slug: "delhi", active: true, capital: "New Delhi" },
+  });
+  console.log("✓ Delhi state (UT)");
+
+  const delhiDistrictDefs = [
+    {
+      slug: "new-delhi", name: "New Delhi", nameLocal: "नई दिल्ली",
+      tagline: "Seat of India's Government", active: true,
+      population: 142004, area: 35.0, talukCount: 0, villageCount: 0,
+      literacy: 89.38, sexRatio: 902, density: 4057,
+      taluks: [{ slug: "new-delhi-subdivision", name: "New Delhi Subdivision", nameLocal: "नई दिल्ली उपखंड", tagline: "Administrative Subdivision", pop: 142004, area: 35.0, villages: 0 }],
+    },
+    {
+      slug: "central-delhi", name: "Central Delhi", nameLocal: "मध्य दिल्ली",
+      tagline: "Heart of Old Delhi", active: false,
+      population: 578671, area: 25.0, talukCount: 0, villageCount: 0,
+      literacy: 83.14, sexRatio: 883, density: 23147,
+      taluks: [
+        { slug: "kotwali", name: "Kotwali", nameLocal: "कोतवाली", tagline: "Old Delhi Core", pop: 300000, area: 13.0, villages: 0 },
+        { slug: "daryaganj", name: "Daryaganj", nameLocal: "दरियागंज", tagline: "Book Market Hub", pop: 278671, area: 12.0, villages: 0 },
+      ],
+    },
+    {
+      slug: "north-delhi", name: "North Delhi", nameLocal: "उत्तर दिल्ली",
+      tagline: "University & Civil Lines Hub", active: false,
+      population: 887978, area: 60.0, talukCount: 0, villageCount: 0,
+      literacy: 84.75, sexRatio: 895, density: 14800,
+      taluks: [
+        { slug: "civil-lines", name: "Civil Lines", nameLocal: "सिविल लाइन्स", tagline: "Administrative Quarter", pop: 300000, area: 20.0, villages: 0 },
+        { slug: "sadar-bazaar", name: "Sadar Bazaar", nameLocal: "सदर बाज़ार", tagline: "Wholesale Market Hub", pop: 300000, area: 20.0, villages: 0 },
+        { slug: "model-town", name: "Model Town", nameLocal: "मॉडल टाउन", tagline: "Planned Residential Colony", pop: 287978, area: 20.0, villages: 0 },
+      ],
+    },
+    {
+      slug: "north-west-delhi", name: "North West Delhi", nameLocal: "उत्तर पश्चिम दिल्ली",
+      tagline: "Delhi's Largest District", active: false,
+      population: 3651261, area: 440.0, talukCount: 0, villageCount: 0,
+      literacy: 82.47, sexRatio: 866, density: 8303,
+      taluks: [
+        { slug: "narela", name: "Narela", nameLocal: "नरेला", tagline: "Industrial Growth Zone", pop: 1200000, area: 150.0, villages: 0 },
+        { slug: "rohini", name: "Rohini", nameLocal: "रोहिणी", tagline: "Sub-City of Delhi", pop: 1500000, area: 150.0, villages: 0 },
+        { slug: "kanjhawala", name: "Kanjhawala", nameLocal: "कांझावला", tagline: "Rural-Urban Fringe", pop: 951261, area: 140.0, villages: 0 },
+      ],
+    },
+    {
+      slug: "north-east-delhi", name: "North East Delhi", nameLocal: "उत्तर पूर्व दिल्ली",
+      tagline: "Densest District in India", active: false,
+      population: 2241624, area: 60.0, talukCount: 0, villageCount: 0,
+      literacy: 80.90, sexRatio: 886, density: 37360,
+      taluks: [
+        { slug: "seelampur", name: "Seelampur", nameLocal: "सीलमपुर", tagline: "Trans-Yamuna Settlement", pop: 800000, area: 20.0, villages: 0 },
+        { slug: "seemapuri", name: "Seemapuri", nameLocal: "सीमापुरी", tagline: "Resettlement Colony", pop: 741624, area: 20.0, villages: 0 },
+        { slug: "karawal-nagar", name: "Karawal Nagar", nameLocal: "करावल नगर", tagline: "Rapidly Urbanizing Zone", pop: 700000, area: 20.0, villages: 0 },
+      ],
+    },
+    {
+      slug: "east-delhi", name: "East Delhi", nameLocal: "पूर्व दिल्ली",
+      tagline: "Trans-Yamuna Gateway", active: false,
+      population: 1707725, area: 64.0, talukCount: 0, villageCount: 0,
+      literacy: 86.05, sexRatio: 881, density: 26683,
+      taluks: [
+        { slug: "gandhi-nagar", name: "Gandhi Nagar", nameLocal: "गांधी नगर", tagline: "Garment Market Hub", pop: 570000, area: 21.0, villages: 0 },
+        { slug: "preet-vihar", name: "Preet Vihar", nameLocal: "प्रीत विहार", tagline: "East Delhi Commercial Centre", pop: 570000, area: 21.0, villages: 0 },
+        { slug: "vivek-vihar", name: "Vivek Vihar", nameLocal: "विवेक विहार", tagline: "Residential & Industrial Mix", pop: 567725, area: 22.0, villages: 0 },
+      ],
+    },
+    {
+      slug: "south-delhi", name: "South Delhi", nameLocal: "दक्षिण दिल्ली",
+      tagline: "Affluent South & Diplomatic Enclave", active: false,
+      population: 2731929, area: 250.0, talukCount: 0, villageCount: 0,
+      literacy: 86.48, sexRatio: 898, density: 10928,
+      taluks: [
+        { slug: "defence-colony", name: "Defence Colony", nameLocal: "डिफेंस कॉलोनी", tagline: "Upscale Residential Area", pop: 910000, area: 83.0, villages: 0 },
+        { slug: "hauz-khas", name: "Hauz Khas", nameLocal: "हौज़ खास", tagline: "Heritage & Culture Hub", pop: 910000, area: 83.0, villages: 0 },
+        { slug: "mehrauli", name: "Mehrauli", nameLocal: "महरौली", tagline: "Qutub Minar Precinct", pop: 911929, area: 84.0, villages: 0 },
+      ],
+    },
+    {
+      slug: "south-west-delhi", name: "South West Delhi", nameLocal: "दक्षिण पश्चिम दिल्ली",
+      tagline: "Dwarka & Airport Hub", active: false,
+      population: 2292958, area: 420.0, talukCount: 0, villageCount: 0,
+      literacy: 85.51, sexRatio: 844, density: 5460,
+      taluks: [
+        { slug: "dwarka", name: "Dwarka", nameLocal: "द्वारका", tagline: "Planned Sub-City", pop: 800000, area: 140.0, villages: 0 },
+        { slug: "kapashera", name: "Kapashera", nameLocal: "कापशेरा", tagline: "Airport Periphery", pop: 700000, area: 140.0, villages: 0 },
+        { slug: "najafgarh", name: "Najafgarh", nameLocal: "नजफगढ़", tagline: "Agricultural Hinterland", pop: 792958, area: 140.0, villages: 0 },
+      ],
+    },
+    {
+      slug: "south-east-delhi", name: "South East Delhi", nameLocal: "दक्षिण पूर्व दिल्ली",
+      tagline: "Sarita Vihar & Badarpur Corridor", active: false,
+      population: 1534795, area: 44.0, talukCount: 0, villageCount: 0,
+      literacy: 85.11, sexRatio: 897, density: 34882,
+      taluks: [
+        { slug: "sarita-vihar", name: "Sarita Vihar", nameLocal: "सरिता विहार", tagline: "Residential Hub", pop: 512000, area: 15.0, villages: 0 },
+        { slug: "kalkaji", name: "Kalkaji", nameLocal: "कालकाजी", tagline: "Temple & Market Area", pop: 512000, area: 15.0, villages: 0 },
+        { slug: "okhla", name: "Okhla", nameLocal: "ओखला", tagline: "Industrial Estate", pop: 510795, area: 14.0, villages: 0 },
+      ],
+    },
+    {
+      slug: "west-delhi", name: "West Delhi", nameLocal: "पश्चिम दिल्ली",
+      tagline: "Industrial & Residential Hub", active: false,
+      population: 2543243, area: 129.0, talukCount: 0, villageCount: 0,
+      literacy: 83.18, sexRatio: 876, density: 19714,
+      taluks: [
+        { slug: "rajouri-garden", name: "Rajouri Garden", nameLocal: "राजौरी गार्डन", tagline: "Commercial & Retail Hub", pop: 850000, area: 43.0, villages: 0 },
+        { slug: "punjabi-bagh", name: "Punjabi Bagh", nameLocal: "पंजाबी बाग", tagline: "Affluent West Delhi", pop: 850000, area: 43.0, villages: 0 },
+        { slug: "patel-nagar", name: "Patel Nagar", nameLocal: "पटेल नगर", tagline: "Central West Delhi", pop: 843243, area: 43.0, villages: 0 },
+      ],
+    },
+    {
+      slug: "shahdara", name: "Shahdara", nameLocal: "शाहदरा",
+      tagline: "East Bank of the Yamuna", active: false,
+      population: 1693005, area: 55.0, talukCount: 0, villageCount: 0,
+      literacy: 85.31, sexRatio: 882, density: 30782,
+      taluks: [
+        { slug: "shahdara-subdivision", name: "Shahdara", nameLocal: "शाहदरा", tagline: "Historic Trans-Yamuna", pop: 850000, area: 28.0, villages: 0 },
+        { slug: "seemapuri-east", name: "Seemapuri East", nameLocal: "सीमापुरी पूर्व", tagline: "Eastern Periphery", pop: 843005, area: 27.0, villages: 0 },
+      ],
+    },
+  ];
+
+  for (const def of delhiDistrictDefs) {
+    const district = await prisma.district.upsert({
+      where: { stateId_slug: { stateId: delhi.id, slug: def.slug } },
+      update: { active: def.active },
+      create: {
+        stateId: delhi.id,
+        name: def.name, nameLocal: def.nameLocal,
+        slug: def.slug,
+        tagline: def.tagline,
+        active: def.active,
+        population: def.population, area: def.area,
+        talukCount: def.talukCount, villageCount: def.villageCount,
+        literacy: def.literacy, sexRatio: def.sexRatio,
+        density: def.density,
+      },
+    });
+
+    for (const t of def.taluks) {
+      await prisma.taluk.upsert({
+        where: { districtId_slug: { districtId: district.id, slug: t.slug } },
+        update: {},
+        create: {
+          districtId: district.id,
+          name: t.name, nameLocal: t.nameLocal, slug: t.slug,
+          tagline: t.tagline,
+          population: t.pop, area: t.area, villageCount: t.villages,
+        },
+      });
+    }
+    console.log(`✓ ${def.name} + ${def.taluks.length} subdivisions`);
+  }
+
+  // ── Maharashtra State ─────────────────────────────────────
+  console.log("\n🌱 Upserting Maharashtra hierarchy...");
+
+  const maharashtra = await prisma.state.upsert({
+    where: { slug: "maharashtra" },
+    update: { active: true },
+    create: { name: "Maharashtra", nameLocal: "महाराष्ट्र", slug: "maharashtra", active: true, capital: "Mumbai" },
+  });
+  console.log("✓ Maharashtra state");
+
+  const maharashtraDistrictDefs = [
+    {
+      slug: "mumbai", name: "Mumbai", nameLocal: "मुंबई",
+      tagline: "Financial Capital of India", active: true,
+      population: 12442373, area: 603, talukCount: 0, villageCount: 0,
+      literacy: 89.73, sexRatio: 832, density: 20634,
+      taluks: [
+        { slug: "andheri", name: "Andheri", nameLocal: "अंधेरी", tagline: "Western Suburbs Hub", pop: 2000000, area: 75, villages: 0 },
+        { slug: "bandra", name: "Bandra", nameLocal: "बांद्रा", tagline: "Queen of the Suburbs", pop: 1500000, area: 60, villages: 0 },
+        { slug: "borivali", name: "Borivali", nameLocal: "बोरिवली", tagline: "Gateway to Sanjay Gandhi National Park", pop: 1200000, area: 80, villages: 0 },
+        { slug: "kurla", name: "Kurla", nameLocal: "कुर्ला", tagline: "Central Suburbs Junction", pop: 1100000, area: 50, villages: 0 },
+        { slug: "dadar", name: "Dadar", nameLocal: "दादर", tagline: "Heart of Mumbai", pop: 800000, area: 40, villages: 0 },
+        { slug: "colaba", name: "Colaba", nameLocal: "कुलाबा", tagline: "South Mumbai Heritage", pop: 600000, area: 30, villages: 0 },
+        { slug: "fort-town", name: "Fort/Town", nameLocal: "फोर्ट/टाउन", tagline: "Historic Business District", pop: 400000, area: 25, villages: 0 },
+        { slug: "malad", name: "Malad", nameLocal: "मालाड", tagline: "Western Suburbs Growth Centre", pop: 1500000, area: 70, villages: 0 },
+      ],
+    },
+    {
+      slug: "pune", name: "Pune", nameLocal: "पुणे",
+      tagline: "Oxford of the East", active: false,
+      population: 9426959, area: 15643, talukCount: 14, villageCount: 1866,
+      literacy: 87.19, sexRatio: 915, density: 603,
+      taluks: [],
+    },
+    {
+      slug: "nagpur", name: "Nagpur", nameLocal: "नागपूर",
+      tagline: "Orange City", active: false,
+      population: 4653570, area: 9892, talukCount: 14, villageCount: 1969,
+      literacy: 88.54, sexRatio: 948, density: 470,
+      taluks: [],
+    },
+    {
+      slug: "nashik", name: "Nashik", nameLocal: "नाशिक",
+      tagline: "Wine Capital of India", active: false,
+      population: 6107187, area: 15530, talukCount: 15, villageCount: 1982,
+      literacy: 82.31, sexRatio: 931, density: 393,
+      taluks: [],
+    },
+    {
+      slug: "aurangabad", name: "Aurangabad", nameLocal: "औरंगाबाद",
+      tagline: "City of Gates", active: false,
+      population: 3695928, area: 10100, talukCount: 9, villageCount: 1502,
+      literacy: 79.02, sexRatio: 923, density: 366,
+      taluks: [],
+    },
+  ];
+
+  for (const def of maharashtraDistrictDefs) {
+    const district = await prisma.district.upsert({
+      where: { stateId_slug: { stateId: maharashtra.id, slug: def.slug } },
+      update: { active: def.active },
+      create: {
+        stateId: maharashtra.id,
+        name: def.name, nameLocal: def.nameLocal,
+        slug: def.slug,
+        tagline: def.tagline,
+        active: def.active,
+        population: def.population, area: def.area,
+        talukCount: def.talukCount, villageCount: def.villageCount,
+        literacy: def.literacy, sexRatio: def.sexRatio,
+        density: def.density,
+      },
+    });
+
+    for (const t of def.taluks) {
+      await prisma.taluk.upsert({
+        where: { districtId_slug: { districtId: district.id, slug: t.slug } },
+        update: {},
+        create: {
+          districtId: district.id,
+          name: t.name, nameLocal: t.nameLocal, slug: t.slug,
+          tagline: t.tagline,
+          population: t.pop, area: t.area, villageCount: t.villages,
+        },
+      });
+    }
+    console.log(`✓ ${def.name} + ${def.taluks.length} subdivisions`);
+  }
+
+  // ── West Bengal State ────────────────────────────────────
+  console.log("\n🌱 Upserting West Bengal hierarchy...");
+
+  const westBengal = await prisma.state.upsert({
+    where: { slug: "west-bengal" },
+    update: { active: true },
+    create: { name: "West Bengal", nameLocal: "পশ্চিমবঙ্গ", slug: "west-bengal", active: true, capital: "Kolkata" },
+  });
+  console.log("✓ West Bengal state");
+
+  const westBengalDistrictDefs = [
+    {
+      slug: "kolkata", name: "Kolkata", nameLocal: "কলকাতা",
+      tagline: "City of Joy", active: true,
+      population: 4486679, area: 185, talukCount: 0, villageCount: 0,
+      literacy: 87.14, sexRatio: 899, density: 24252,
+      taluks: [
+        { slug: "kolkata-north", name: "Kolkata North", nameLocal: "উত্তর কলকাতা", tagline: "Heritage North Kolkata", pop: 1100000, area: 40, villages: 0 },
+        { slug: "kolkata-south", name: "Kolkata South", nameLocal: "দক্ষিণ কলকাতা", tagline: "Modern South Kolkata", pop: 1200000, area: 50, villages: 0 },
+        { slug: "kolkata-central", name: "Kolkata Central", nameLocal: "মধ্য কলকাতা", tagline: "Commercial Heart", pop: 900000, area: 35, villages: 0 },
+        { slug: "kolkata-east", name: "Kolkata East", nameLocal: "পূর্ব কলকাতা", tagline: "Salt Lake & Rajarhat", pop: 800000, area: 35, villages: 0 },
+        { slug: "kolkata-west-port", name: "Kolkata West (Port)", nameLocal: "পশ্চিম কলকাতা (বন্দর)", tagline: "Port & Industrial Zone", pop: 486679, area: 25, villages: 0 },
+      ],
+    },
+    {
+      slug: "howrah", name: "Howrah", nameLocal: "হাওড়া",
+      tagline: "Twin City of Kolkata", active: false,
+      population: 4841638, area: 1467, talukCount: 2, villageCount: 782,
+      literacy: 83.85, sexRatio: 935, density: 3300,
+      taluks: [],
+    },
+    {
+      slug: "darjeeling", name: "Darjeeling", nameLocal: "দার্জিলিং",
+      tagline: "Queen of the Hills", active: false,
+      population: 1846823, area: 3149, talukCount: 4, villageCount: 697,
+      literacy: 79.92, sexRatio: 971, density: 586,
+      taluks: [],
+    },
+    {
+      slug: "murshidabad", name: "Murshidabad", nameLocal: "মুর্শিদাবাদ",
+      tagline: "Land of the Nawabs", active: false,
+      population: 7103807, area: 5324, talukCount: 5, villageCount: 2210,
+      literacy: 67.53, sexRatio: 957, density: 1334,
+      taluks: [],
+    },
+    {
+      slug: "bardhaman", name: "Bardhaman", nameLocal: "বর্ধমান",
+      tagline: "Rice Bowl of Bengal", active: false,
+      population: 7717563, area: 7024, talukCount: 6, villageCount: 2600,
+      literacy: 77.15, sexRatio: 943, density: 1099,
+      taluks: [],
+    },
+  ];
+
+  for (const def of westBengalDistrictDefs) {
+    const district = await prisma.district.upsert({
+      where: { stateId_slug: { stateId: westBengal.id, slug: def.slug } },
+      update: { active: def.active },
+      create: {
+        stateId: westBengal.id,
+        name: def.name, nameLocal: def.nameLocal,
+        slug: def.slug,
+        tagline: def.tagline,
+        active: def.active,
+        population: def.population, area: def.area,
+        talukCount: def.talukCount, villageCount: def.villageCount,
+        literacy: def.literacy, sexRatio: def.sexRatio,
+        density: def.density,
+      },
+    });
+
+    for (const t of def.taluks) {
+      await prisma.taluk.upsert({
+        where: { districtId_slug: { districtId: district.id, slug: t.slug } },
+        update: {},
+        create: {
+          districtId: district.id,
+          name: t.name, nameLocal: t.nameLocal, slug: t.slug,
+          tagline: t.tagline,
+          population: t.pop, area: t.area, villageCount: t.villages,
+        },
+      });
+    }
+    console.log(`✓ ${def.name} + ${def.taluks.length} subdivisions`);
+  }
+
+  // ── Tamil Nadu State ─────────────────────────────────────
+  console.log("\n🌱 Upserting Tamil Nadu hierarchy...");
+
+  const tamilNadu = await prisma.state.upsert({
+    where: { slug: "tamil-nadu" },
+    update: { active: true },
+    create: { name: "Tamil Nadu", nameLocal: "தமிழ்நாடு", slug: "tamil-nadu", active: true, capital: "Chennai" },
+  });
+  console.log("✓ Tamil Nadu state");
+
+  const tamilNaduDistrictDefs = [
+    {
+      slug: "chennai", name: "Chennai", nameLocal: "சென்னை",
+      tagline: "Gateway to South India", active: true,
+      population: 4646732, area: 426, talukCount: 3, villageCount: 0,
+      literacy: 90.33, sexRatio: 951, density: 10908,
+      taluks: [
+        { slug: "egmore-nungambakkam", name: "Egmore-Nungambakkam", nameLocal: "எழும்பூர்-நுங்கம்பாக்கம்", tagline: "Central Chennai Hub", pop: 1800000, area: 140, villages: 0 },
+        { slug: "mambalam-guindy", name: "Mambalam-Guindy", nameLocal: "மாம்பலம்-கிண்டி", tagline: "South Chennai Commercial Belt", pop: 1700000, area: 150, villages: 0 },
+        { slug: "madhavaram", name: "Madhavaram", nameLocal: "மாதவரம்", tagline: "North Chennai Growth Corridor", pop: 1146732, area: 136, villages: 0 },
+      ],
+    },
+    {
+      slug: "coimbatore", name: "Coimbatore", nameLocal: "கோயம்புத்தூர்",
+      tagline: "Manchester of South India", active: false,
+      population: 3458045, area: 4723, talukCount: 6, villageCount: 1201,
+      literacy: 84.42, sexRatio: 998, density: 732,
+      taluks: [],
+    },
+    {
+      slug: "madurai", name: "Madurai", nameLocal: "மதுரை",
+      tagline: "Temple City", active: false,
+      population: 3038252, area: 3741, talukCount: 7, villageCount: 663,
+      literacy: 82.13, sexRatio: 990, density: 812,
+      taluks: [],
+    },
+    {
+      slug: "tiruchirappalli", name: "Tiruchirappalli", nameLocal: "திருச்சிராப்பள்ளி",
+      tagline: "Rock Fort City", active: false,
+      population: 2722290, area: 4404, talukCount: 8, villageCount: 917,
+      literacy: 82.19, sexRatio: 1010, density: 618,
+      taluks: [],
+    },
+    {
+      slug: "salem", name: "Salem", nameLocal: "சேலம்",
+      tagline: "Steel City of Tamil Nadu", active: false,
+      population: 3482056, area: 5245, talukCount: 9, villageCount: 1006,
+      literacy: 72.22, sexRatio: 954, density: 664,
+      taluks: [],
+    },
+  ];
+
+  for (const def of tamilNaduDistrictDefs) {
+    const district = await prisma.district.upsert({
+      where: { stateId_slug: { stateId: tamilNadu.id, slug: def.slug } },
+      update: { active: def.active },
+      create: {
+        stateId: tamilNadu.id,
+        name: def.name, nameLocal: def.nameLocal,
+        slug: def.slug,
+        tagline: def.tagline,
+        active: def.active,
+        population: def.population, area: def.area,
+        talukCount: def.talukCount, villageCount: def.villageCount,
+        literacy: def.literacy, sexRatio: def.sexRatio,
+        density: def.density,
       },
     });
 

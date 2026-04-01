@@ -460,9 +460,9 @@ export const INDIA_STATES: State[] = [
   },
   {
     slug: "tamil-nadu", name: "Tamil Nadu", nameLocal: "தமிழ்நாடு",
-    active: false, capital: "Chennai", type: "state",
+    active: true, capital: "Chennai", type: "state",
     districts: [
-      lockedDistrict("chennai", "Chennai"),
+      { name: "Chennai", slug: "chennai", nameLocal: "சென்னை", active: true, taluks: [] },
       lockedDistrict("coimbatore", "Coimbatore"),
       lockedDistrict("madurai", "Madurai"),
       lockedDistrict("tiruchirappalli", "Tiruchirappalli"),
@@ -482,9 +482,9 @@ export const INDIA_STATES: State[] = [
   },
   {
     slug: "maharashtra", name: "Maharashtra", nameLocal: "महाराष्ट्र",
-    active: false, capital: "Mumbai", type: "state",
+    active: true, capital: "Mumbai", type: "state",
     districts: [
-      lockedDistrict("mumbai", "Mumbai"),
+      { name: "Mumbai", slug: "mumbai", nameLocal: "मुंबई", active: true, taluks: [] },
       lockedDistrict("pune", "Pune"),
       lockedDistrict("nagpur", "Nagpur"),
       lockedDistrict("nashik", "Nashik"),
@@ -548,9 +548,9 @@ export const INDIA_STATES: State[] = [
   },
   {
     slug: "west-bengal", name: "West Bengal", nameLocal: "পশ্চিমবঙ্গ",
-    active: false, capital: "Kolkata", type: "state",
+    active: true, capital: "Kolkata", type: "state",
     districts: [
-      lockedDistrict("kolkata", "Kolkata"),
+      { name: "Kolkata", slug: "kolkata", nameLocal: "কলকাতা", active: true, taluks: [] },
       lockedDistrict("howrah", "Howrah"),
       lockedDistrict("darjeeling", "Darjeeling"),
       lockedDistrict("murshidabad", "Murshidabad"),
@@ -682,11 +682,19 @@ export const INDIA_STATES: State[] = [
   // ── Union Territories ────────────────────────────────────
   {
     slug: "delhi", name: "Delhi", nameLocal: "दिल्ली",
-    active: false, capital: "New Delhi", type: "ut",
+    active: true, capital: "New Delhi", type: "ut",
     districts: [
-      lockedDistrict("new-delhi", "New Delhi"),
-      lockedDistrict("south-delhi", "South Delhi"),
-      lockedDistrict("north-delhi", "North Delhi"),
+      { slug: "new-delhi", name: "New Delhi", nameLocal: "नई दिल्ली", active: true, taluks: [] },
+      { slug: "central-delhi", name: "Central Delhi", nameLocal: "मध्य दिल्ली", active: false, taluks: [] },
+      { slug: "north-delhi", name: "North Delhi", nameLocal: "उत्तर दिल्ली", active: false, taluks: [] },
+      { slug: "north-west-delhi", name: "North West Delhi", nameLocal: "उत्तर पश्चिम दिल्ली", active: false, taluks: [] },
+      { slug: "north-east-delhi", name: "North East Delhi", nameLocal: "उत्तर पूर्व दिल्ली", active: false, taluks: [] },
+      { slug: "east-delhi", name: "East Delhi", nameLocal: "पूर्व दिल्ली", active: false, taluks: [] },
+      { slug: "south-delhi", name: "South Delhi", nameLocal: "दक्षिण दिल्ली", active: false, taluks: [] },
+      { slug: "south-west-delhi", name: "South West Delhi", nameLocal: "दक्षिण पश्चिम दिल्ली", active: false, taluks: [] },
+      { slug: "south-east-delhi", name: "South East Delhi", nameLocal: "दक्षिण पूर्व दिल्ली", active: false, taluks: [] },
+      { slug: "west-delhi", name: "West Delhi", nameLocal: "पश्चिम दिल्ली", active: false, taluks: [] },
+      { slug: "shahdara", name: "Shahdara", nameLocal: "शाहदरा", active: false, taluks: [] },
     ],
   },
   {

@@ -18,6 +18,20 @@ const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
 const AGMARKNET_DISTRICT_OVERRIDE: Record<string, string> = {
   "bengaluru-urban": "Bangalore",
   "mysuru":          "Mysore",
+  "new-delhi":       "Delhi",
+  "central-delhi":   "Delhi",
+  "north-delhi":     "Delhi",
+  "north-west-delhi":"Delhi",
+  "north-east-delhi":"Delhi",
+  "east-delhi":      "Delhi",
+  "south-delhi":     "Delhi",
+  "south-west-delhi":"Delhi",
+  "south-east-delhi":"Delhi",
+  "west-delhi":      "Delhi",
+  "shahdara":        "Delhi",
+  "mumbai":          "Mumbai",
+  "kolkata":         "Kolkata",
+  "chennai":         "Chennai",
 };
 
 interface AgmarkRecord {

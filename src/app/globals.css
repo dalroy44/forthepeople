@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Tamil script for Tamil Nadu */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;600;700&display=swap');
+
+/* Bengali script for West Bengal */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap');
+
 @theme {
   /* ── Colors ── */
   --color-background: #FAFAF8;
