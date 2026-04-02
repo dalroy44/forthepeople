@@ -126,8 +126,9 @@ export default function HomeDrilldown({ locale, tickerShown = false }: HomeDrill
         .slice(0, 5)
     : [];
 
-  const karnatakaState = INDIA_STATES.find((s) => s.slug === "karnataka");
-  const activeDistricts = karnatakaState?.districts.filter((d) => d.active) ?? [];
+  const activeDistricts = INDIA_STATES.flatMap((s) =>
+    s.districts.filter((d) => d.active).map((d) => ({ ...d, _stateSlug: s.slug }))
+  );
   const lockedStates = INDIA_STATES.filter((s) => !s.active);
 
   const tickerOffset = tickerShown ? TICKER_H : 0;
@@ -303,7 +304,7 @@ function InfoPanel({
   searchQuery: string;
   setSearchQuery: (v: string) => void;
   filtered: { state: (typeof INDIA_STATES)[number]; district: (typeof INDIA_STATES)[number]["districts"][number] }[];
-  activeDistricts: (typeof INDIA_STATES)[number]["districts"];
+  activeDistricts: Array<(typeof INDIA_STATES)[number]["districts"][number] & { _stateSlug: string }>;
   lockedStates: typeof INDIA_STATES;
   districtPreviews: DistrictPreview[];
 }) {
@@ -381,7 +382,7 @@ function InfoPanel({
             {activeDistricts.map((d) => {
               const preview = districtPreviews.find((p) => p.slug === d.slug);
               return (
-                <Link key={d.slug} href={`/${locale}/karnataka/${d.slug}`}
+                <Link key={d.slug} href={`/${locale}/${d._stateSlug}/${d.slug}`}
                   style={{
                     display: "flex", alignItems: "flex-start", justifyContent: "space-between",
                     padding: "9px 12px", background: "#FFFFFF", border: "1px solid #E8E8E4",
@@ -542,7 +543,7 @@ function MobileActiveDistrictsCard({
   locale, activeDistricts, districtPreviews,
 }: {
   locale: string;
-  activeDistricts: (typeof INDIA_STATES)[number]["districts"];
+  activeDistricts: Array<(typeof INDIA_STATES)[number]["districts"][number] & { _stateSlug: string }>;
   districtPreviews: DistrictPreview[];
 }) {
   return (
@@ -558,7 +559,7 @@ function MobileActiveDistrictsCard({
           {activeDistricts.map((d) => {
             const preview = districtPreviews.find((p) => p.slug === d.slug);
             return (
-              <Link key={d.slug} href={`/${locale}/karnataka/${d.slug}`}
+              <Link key={d.slug} href={`/${locale}/${d._stateSlug}/${d.slug}`}
                 style={{
                   display: "flex", alignItems: "flex-start", justifyContent: "space-between",
                   padding: "12px 14px", background: "#F8FAFF", border: "1px solid #DBEAFE",

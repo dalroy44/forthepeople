@@ -14,8 +14,7 @@ import { NextResponse } from "next/server";
 import { cacheGet, cacheSet } from "@/lib/cache";
 
 const CACHE_KEY = "ftp:market-ticker:v2";
-const FUEL_CACHE_KEY = "ftp:fuel-prices:v1";
-const FUEL_TTL = 6 * 60 * 60; // 6 hours (fuel changes daily)
+// Fuel prices removed — not universal across districts
 
 export interface TickerItem {
   symbol: string;
@@ -91,46 +90,9 @@ async function fetchUSDINR(): Promise<{ rate: number; changePct: number } | null
   }
 }
 
-// Scrape petrol/LPG from goodreturns.in (cached 6h — prices change once daily)
-async function fetchFuelPrices(): Promise<{ petrol: number | null; lpg: number | null }> {
-  const cached = await cacheGet<{ petrol: number | null; lpg: number | null }>(FUEL_CACHE_KEY);
-  if (cached) return cached;
+// Fuel prices (petrol/LPG) removed — they are city-specific, not universal
 
-  let petrol: number | null = null;
-  let lpg: number | null = null;
-
-  try {
-    const petrolRes = await fetch("https://www.goodreturns.in/petrol-price-in-delhi.html", {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)" },
-      next: { revalidate: 0 },
-    });
-    if (petrolRes.ok) {
-      const html = await petrolRes.text();
-      // Match price like "94.72" near "Today's Petrol Price"
-      const m = html.match(/Today['']s Petrol Price[^₹]*₹\s*([\d.]+)/i)
-        || html.match(/petrol[^₹\d]{0,40}₹\s*([\d.]+)/i);
-      if (m) petrol = parseFloat(m[1]);
-    }
-  } catch { /* ignore */ }
-
-  try {
-    const lpgRes = await fetch("https://www.goodreturns.in/lpg-price.html", {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)" },
-      next: { revalidate: 0 },
-    });
-    if (lpgRes.ok) {
-      const html = await lpgRes.text();
-      const m = html.match(/LPG[^₹\d]{0,40}₹\s*([\d,]+)/i)
-        || html.match(/cylinder[^₹\d]{0,40}₹\s*([\d,]+)/i);
-      if (m) lpg = parseFloat(m[1].replace(/,/g, ""));
-    }
-  } catch { /* ignore */ }
-
-  const result = { petrol, lpg };
-  await cacheSet(FUEL_CACHE_KEY, result, FUEL_TTL);
-  return result;
-}
-
+// Fallback static data (last known realistic values — used when all sources fail)
 // Fallback static data (last known realistic values — used when all sources fail)
 const FALLBACK: TickerItem[] = [
   { symbol: "SENSEX", label: "Sensex", value: "74,248", change: "+312", changePct: 0.42, direction: "up", unit: "" },
@@ -139,8 +101,6 @@ const FALLBACK: TickerItem[] = [
   { symbol: "SILVER", label: "Silver", value: "₹97,800", change: "+450", changePct: 0.46, direction: "up", unit: "/kg" },
   { symbol: "USD_INR", label: "USD/INR", value: "₹84.52", change: "+0.08", changePct: 0.09, direction: "up", unit: "" },
   { symbol: "CRUDE", label: "Crude", value: "$78.40", change: "-0.90", changePct: -1.14, direction: "down", unit: "/bbl" },
-  { symbol: "PETROL", label: "Petrol Delhi", value: "₹94.72", change: "–", changePct: 0, direction: "flat", unit: "/L" },
-  { symbol: "LPG", label: "LPG Cylinder", value: "₹803", change: "–", changePct: 0, direction: "flat", unit: "" },
 ];
 
 function fmt(n: number, decimals = 0): string {
@@ -253,16 +213,7 @@ export async function GET() {
     });
   }
 
-  // Petrol / LPG
-  const fuel = await fetchFuelPrices();
-  if (fuel.petrol) {
-    items.push({ symbol: "PETROL", label: "Petrol Delhi", value: `₹${fuel.petrol.toFixed(2)}`, change: "–", changePct: 0, direction: "flat", unit: "/L" });
-  }
-  if (fuel.lpg) {
-    items.push({ symbol: "LPG", label: "LPG Cylinder", value: `₹${fmt(Math.round(fuel.lpg))}`, change: "–", changePct: 0, direction: "flat", unit: "" });
-  }
-
-  // Order: Sensex, Nifty, Gold, Silver, USD/INR, Crude, Petrol, LPG
+  // Order: Sensex, Nifty, Gold, Silver, USD/INR, Crude (universal only)
   const ordered: TickerItem[] = [
     items.find((i) => i.symbol === "SENSEX"),
     items.find((i) => i.symbol === "NIFTY50"),
@@ -270,8 +221,6 @@ export async function GET() {
     items.find((i) => i.symbol === "SILVER"),
     items.find((i) => i.symbol === "USD_INR"),
     items.find((i) => i.symbol === "CRUDE"),
-    items.find((i) => i.symbol === "PETROL"),
-    items.find((i) => i.symbol === "LPG"),
   ].filter(Boolean) as TickerItem[];
 
   // Use fallback if nothing fetched
