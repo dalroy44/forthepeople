@@ -15,6 +15,11 @@ const DISTRICT_PROJECTION: Record<string, { center: [number, number]; scale: num
   "mandya":          { center: [76.77, 12.55], scale: 16000 },
   "bengaluru-urban": { center: [77.65, 12.95], scale: 22000 },
   "mysuru":          { center: [76.60, 12.30], scale: 7500  },
+  "new-delhi":       { center: [77.21, 28.61], scale: 80000 },
+  "mumbai":          { center: [72.87, 19.08], scale: 14000 },
+  "chennai":         { center: [80.22, 13.05], scale: 22000 },
+  "kolkata":         { center: [88.37, 22.55], scale: 25000 },
+  "lucknow":         { center: [80.90, 26.85], scale: 10000 },
 };
 const DEFAULT_PROJECTION = { center: [76.77, 12.55] as [number, number], scale: 16000 };
 
@@ -38,6 +43,31 @@ const TALUK_COLORS: Record<string, { fill: string; stroke: string }> = {
   "hd-kote":          { fill: "rgba(139,92,246,0.22)",  stroke: "#7C3AED" },
   "periyapatna":      { fill: "rgba(236,72,153,0.22)",  stroke: "#DB2777" },
   "kr-nagar":         { fill: "rgba(20,184,166,0.22)",  stroke: "#0D9488" },
+  // New Delhi
+  "connaught-place":  { fill: "rgba(37,99,235,0.22)",   stroke: "#2563EB" },
+  "chanakyapuri":     { fill: "rgba(16,185,129,0.22)",  stroke: "#059669" },
+  "lodhi-road":       { fill: "rgba(245,158,11,0.22)",  stroke: "#D97706" },
+  // Mumbai
+  "south-mumbai":     { fill: "rgba(37,99,235,0.22)",   stroke: "#2563EB" },
+  "western-suburbs":  { fill: "rgba(16,185,129,0.22)",  stroke: "#059669" },
+  "eastern-suburbs":  { fill: "rgba(245,158,11,0.22)",  stroke: "#D97706" },
+  "navi-mumbai-zone": { fill: "rgba(139,92,246,0.22)",  stroke: "#7C3AED" },
+  "north-mumbai":     { fill: "rgba(236,72,153,0.22)",  stroke: "#DB2777" },
+  // Chennai
+  "chennai-north":    { fill: "rgba(37,99,235,0.22)",   stroke: "#2563EB" },
+  "chennai-south":    { fill: "rgba(16,185,129,0.22)",  stroke: "#059669" },
+  "chennai-central":  { fill: "rgba(245,158,11,0.22)",  stroke: "#D97706" },
+  "chennai-west":     { fill: "rgba(139,92,246,0.22)",  stroke: "#7C3AED" },
+  // Kolkata
+  "kolkata-north":    { fill: "rgba(37,99,235,0.22)",   stroke: "#2563EB" },
+  "kolkata-south":    { fill: "rgba(16,185,129,0.22)",  stroke: "#059669" },
+  "kolkata-central":  { fill: "rgba(245,158,11,0.22)",  stroke: "#D97706" },
+  "kolkata-east":     { fill: "rgba(139,92,246,0.22)",  stroke: "#7C3AED" },
+  // Lucknow
+  "lucknow-city":     { fill: "rgba(37,99,235,0.22)",   stroke: "#2563EB" },
+  "mohanlalganj":     { fill: "rgba(16,185,129,0.22)",  stroke: "#059669" },
+  "malihabad":        { fill: "rgba(245,158,11,0.22)",  stroke: "#D97706" },
+  "bakshi-ka-talab":  { fill: "rgba(139,92,246,0.22)",  stroke: "#7C3AED" },
 };
 const DEFAULT_COLOR = { fill: "rgba(37,99,235,0.18)", stroke: "#2563EB" };
 
@@ -52,6 +82,20 @@ const NAME_TO_SLUG: Record<string, string> = {
   "Mysuru": "mysuru-taluk", "Nanjangud": "nanjangud", "T. Narasipura": "t-narasipur",
   "Hunsur": "hunsur", "H.D. Kote": "hd-kote", "Periyapatna": "periyapatna",
   "K.R. Nagar": "kr-nagar",
+  // New Delhi
+  "Connaught Place": "connaught-place", "Chanakyapuri": "chanakyapuri", "Lodhi Road": "lodhi-road",
+  // Mumbai
+  "South Mumbai": "south-mumbai", "Western Suburbs": "western-suburbs",
+  "Eastern Suburbs": "eastern-suburbs", "Harbour Zone": "navi-mumbai-zone", "North Mumbai": "north-mumbai",
+  // Chennai
+  "Chennai North": "chennai-north", "Chennai South": "chennai-south",
+  "Chennai Central": "chennai-central", "Chennai West": "chennai-west",
+  // Kolkata
+  "North Kolkata": "kolkata-north", "South Kolkata": "kolkata-south",
+  "Central Kolkata": "kolkata-central", "East Kolkata": "kolkata-east",
+  // Lucknow
+  "Lucknow City": "lucknow-city", "Mohanlalganj": "mohanlalganj",
+  "Malihabad": "malihabad", "Bakshi Ka Talab": "bakshi-ka-talab",
 };
 
 interface TalukMapProps {
