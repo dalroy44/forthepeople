@@ -96,6 +96,17 @@ Running this platform for all 780+ districts costs approximately ₹12 lakh/year
 - **₹1.50/day** serves one district
 - [Support page →](https://forthepeople.in/support)
 
+## Contributing
+
+We welcome contributions from developers of all skill levels! Whether you want to add a new district, fix a bug, improve the UI, or add translations — every contribution helps.
+
+- Read the [Contributing Guide](CONTRIBUTING.md) to get started
+- Check out [`good-first-issue`](https://github.com/jayanthmb14/forthepeople/labels/good-first-issue) labeled issues
+- Review our [Code of Conduct](CODE_OF_CONDUCT.md)
+- Report security issues privately via [SECURITY.md](SECURITY.md)
+
+**Goal:** Cover all 780+ districts across India. Currently at 7 — help us get there!
+
 ## Creator
 
 **Jayanth M B** — Solo entrepreneur from Karnataka, India.
