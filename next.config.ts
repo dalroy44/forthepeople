@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
           { key: "X-Powered-By", value: "ForThePeople.in" },
           { key: "X-Creator", value: "Jayanth M B" },
           { key: "X-Project-ID", value: "FTP-JMB-2026-IN" },
-          { key: "X-License", value: "MIT with Attribution — github.com/jayanthmb14/forthepeople" },
+          { key: "X-License", value: "MIT with Attribution - github.com/jayanthmb14/forthepeople" },
         ],
       },
       // Cache static GeoJSON files aggressively
