@@ -6,7 +6,7 @@
 
 **India's first free, real-time, district-level civic transparency platform.**
 
-[Live Site](https://forthepeople.in) · [Vote for Features](https://forthepeople.in/en/features) · [Support the Project](https://forthepeople.in/support)
+[Live Site](https://forthepeople.in) · [Watch the Platform Walkthrough](https://www.instagram.com/reel/DW0UIkWvmxq/) · [Vote for Features](https://forthepeople.in/en/features) · [Support the Project](https://forthepeople.in/support)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Districts](https://img.shields.io/badge/districts_live-7-green.svg)

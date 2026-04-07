@@ -92,13 +92,87 @@ async function fetchUSDINR(): Promise<{ rate: number; changePct: number } | null
 
 // Fuel prices (petrol/LPG) removed — they are city-specific, not universal
 
-// Fallback static data (last known realistic values — used when all sources fail)
+// ── IBJA (India Bullion and Jewellers Association) — Official Indian gold/silver prices ──
+async function fetchIBJAPrices(): Promise<{
+  gold: { price: number; change: number; changePct: number } | null;
+  silver: { price: number; change: number; changePct: number } | null;
+}> {
+  try {
+    const res = await fetch("https://www.ibjarates.com/", {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      next: { revalidate: 0 },
+    });
+    if (!res.ok) return { gold: null, silver: null };
+    const html = await res.text();
+
+    // Extract gold 999 price (per 10g) — look for the rate in the page
+    // IBJA page has structured rate tables with AM/PM rates
+    const goldMatch = html.match(/999[^]*?₹?\s*([\d,]+)\s*(?:\.(\d+))?/);
+    const silverMatch = html.match(/Silver[^]*?999[^]*?₹?\s*([\d,]+)\s*(?:\.(\d+))?/i);
+
+    // More robust: look for hidden fields or specific patterns
+    const goldRateMatch = html.match(/HdnGold[^"]*"[^"]*value="([^"]*)"/i);
+    const silverRateMatch = html.match(/HdnSilver[^"]*"[^"]*value="([^"]*)"/i);
+
+    let goldPrice: number | null = null;
+    let silverPrice: number | null = null;
+
+    // Try hidden fields first (most reliable)
+    if (goldRateMatch) {
+      // Hidden field may contain comma-separated historical values; last value is latest
+      const vals = goldRateMatch[1].split(",").map((v: string) => parseFloat(v.trim())).filter((v: number) => !isNaN(v) && v > 50000);
+      if (vals.length > 0) goldPrice = vals[vals.length - 1];
+    }
+    if (silverRateMatch) {
+      const vals = silverRateMatch[1].split(",").map((v: string) => parseFloat(v.trim())).filter((v: number) => !isNaN(v) && v > 50000);
+      if (vals.length > 0) silverPrice = vals[vals.length - 1];
+    }
+
+    // Fallback: parse from visible text — look for 6-digit numbers near "999" and "Gold"/"Silver"
+    if (!goldPrice) {
+      const allGoldPrices = html.match(/(?:Gold|999)[^<]{0,200}?([\d,]{6,8})/gi);
+      if (allGoldPrices) {
+        for (const m of allGoldPrices) {
+          const numMatch = m.match(/([\d,]{6,8})/);
+          if (numMatch) {
+            const val = parseFloat(numMatch[1].replace(/,/g, ""));
+            if (val > 50000 && val < 500000) { goldPrice = val; break; }
+          }
+        }
+      }
+    }
+    if (!silverPrice) {
+      const allSilverPrices = html.match(/Silver[^<]{0,300}?([\d,]{6,8})/gi);
+      if (allSilverPrices) {
+        for (const m of allSilverPrices) {
+          const numMatch = m.match(/([\d,]{6,8})/);
+          if (numMatch) {
+            const val = parseFloat(numMatch[1].replace(/,/g, ""));
+            if (val > 50000 && val < 500000) { silverPrice = val; break; }
+          }
+        }
+      }
+    }
+
+    return {
+      gold: goldPrice ? { price: goldPrice, change: 0, changePct: 0 } : null,
+      silver: silverPrice ? { price: silverPrice, change: 0, changePct: 0 } : null,
+    };
+  } catch {
+    return { gold: null, silver: null };
+  }
+}
+
 // Fallback static data (last known realistic values — used when all sources fail)
 const FALLBACK: TickerItem[] = [
   { symbol: "SENSEX", label: "Sensex", value: "74,248", change: "+312", changePct: 0.42, direction: "up", unit: "" },
   { symbol: "NIFTY50", label: "Nifty 50", value: "22,519", change: "+87", changePct: 0.39, direction: "up", unit: "" },
-  { symbol: "GOLD", label: "Gold", value: "₹93,450", change: "-120", changePct: -0.13, direction: "down", unit: "/10g" },
-  { symbol: "SILVER", label: "Silver", value: "₹97,800", change: "+450", changePct: 0.46, direction: "up", unit: "/kg" },
+  { symbol: "GOLD", label: "Gold (24K)", value: "₹1,47,786", change: "–", changePct: 0, direction: "flat", unit: "/10g" },
+  { symbol: "SILVER", label: "Silver", value: "₹2,30,881", change: "–", changePct: 0, direction: "flat", unit: "/kg" },
   { symbol: "USD_INR", label: "USD/INR", value: "₹84.52", change: "+0.08", changePct: 0.09, direction: "up", unit: "" },
   { symbol: "CRUDE", label: "Crude", value: "$78.40", change: "-0.90", changePct: -1.14, direction: "down", unit: "/bbl" },
 ];
@@ -177,38 +251,33 @@ export async function GET() {
     });
   }
 
-  // Gold (Yahoo Finance: GC=F for futures, approximate INR conversion)
-  const goldUSD = await fetchYahooQuote("GC=F");
-  if (goldUSD && usd) {
+  // Gold & Silver — IBJA (India Bullion and Jewellers Association) official Indian rates
+  const ibja = await fetchIBJAPrices();
+  if (ibja.gold) {
     fetchedAny = true;
-    // Gold futures are per troy oz. Convert to 10g: 1 oz = 31.1035g, 10g = 10/31.1035 oz
-    const goldPer10gINR = (goldUSD.price / 31.1035) * 10 * usd.rate;
-    const goldChangePer10gINR = (goldUSD.change / 31.1035) * 10 * usd.rate;
     items.push({
       symbol: "GOLD",
-      label: "Gold",
-      value: `₹${fmt(Math.round(goldPer10gINR / 100) * 100)}`,
-      change: `${goldChangePer10gINR >= 0 ? "+" : ""}₹${fmt(Math.round(Math.abs(goldChangePer10gINR) / 10) * 10)}`,
-      changePct: goldUSD.changePct,
-      direction: goldUSD.change > 0 ? "up" : goldUSD.change < 0 ? "down" : "flat",
+      label: "Gold (24K)",
+      value: `₹${fmt(Math.round(ibja.gold.price))}`,
+      change: ibja.gold.change !== 0
+        ? `${ibja.gold.change >= 0 ? "+" : ""}₹${fmt(Math.round(Math.abs(ibja.gold.change)))}`
+        : "–",
+      changePct: ibja.gold.changePct,
+      direction: ibja.gold.change > 0 ? "up" : ibja.gold.change < 0 ? "down" : "flat",
       unit: "/10g",
     });
   }
-
-  // Silver
-  const silverUSD = await fetchYahooQuote("SI=F");
-  if (silverUSD && usd) {
+  if (ibja.silver) {
     fetchedAny = true;
-    // Silver futures per oz → per kg (1 kg = 32.1507 oz)
-    const silverPerKgINR = (silverUSD.price / 1) * 32.1507 * usd.rate;
-    const silverChangeINR = (silverUSD.change / 1) * 32.1507 * usd.rate;
     items.push({
       symbol: "SILVER",
       label: "Silver",
-      value: `₹${fmt(Math.round(silverPerKgINR / 100) * 100)}`,
-      change: `${silverChangeINR >= 0 ? "+" : ""}₹${fmt(Math.round(Math.abs(silverChangeINR) / 10) * 10)}`,
-      changePct: silverUSD.changePct,
-      direction: silverUSD.change > 0 ? "up" : silverUSD.change < 0 ? "down" : "flat",
+      value: `₹${fmt(Math.round(ibja.silver.price))}`,
+      change: ibja.silver.change !== 0
+        ? `${ibja.silver.change >= 0 ? "+" : ""}₹${fmt(Math.round(Math.abs(ibja.silver.change)))}`
+        : "–",
+      changePct: ibja.silver.changePct,
+      direction: ibja.silver.change > 0 ? "up" : ibja.silver.change < 0 ? "down" : "flat",
       unit: "/kg",
     });
   }

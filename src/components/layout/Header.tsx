@@ -373,6 +373,30 @@ export default function Header({ locale }: HeaderProps) {
           </>
         )}
 
+        {/* Vote on Features — eye-catching CTA */}
+        <Link
+          href="/en/features"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            padding: "6px 12px",
+            background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
+            color: "#FFF",
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 700,
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+            boxShadow: "0 1px 4px rgba(124,58,237,0.3)",
+            letterSpacing: "0.01em",
+          }}
+        >
+          <span aria-hidden="true">🗳️</span>
+          <span className="hidden sm:inline">Vote on Features</span>
+          <span className="sm:hidden">Vote</span>
+        </Link>
+
         {/* Language selector — all 22 languages */}
         <LanguageSelector locale={locale} pathname={pathname} />
 
