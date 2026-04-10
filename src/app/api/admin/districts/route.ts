@@ -17,8 +17,8 @@ export async function GET() {
   }
   const districts = await prisma.district.findMany({
     where: { active: true },
-    select: { slug: true, name: true, nameLocal: true },
-    orderBy: { name: "asc" },
+    select: { slug: true, name: true, nameLocal: true, state: { select: { slug: true, name: true } } },
+    orderBy: [{ state: { name: "asc" } }, { name: "asc" }],
   });
   return NextResponse.json({ districts });
 }

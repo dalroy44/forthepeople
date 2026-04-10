@@ -42,7 +42,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 export function FactChecker() {
   const [district, setDistrict] = useState("");
-  const [districts, setDistricts] = useState<{ slug: string; name: string }[]>([]);
+  const [districts, setDistricts] = useState<{ slug: string; name: string; state?: { slug: string; name: string } }[]>([]);
   const [modules, setModules] = useState<ModuleStatus[]>([]);
   const [loading, setLoading] = useState<string | null>(null); // module slug or "all"
   const [loadingStatus, setLoadingStatus] = useState(false);
@@ -154,8 +154,18 @@ export function FactChecker() {
             onChange={(e) => setDistrict(e.target.value)}
             style={{ padding: "5px 10px", border: "1px solid #E8E8E4", borderRadius: 6, fontSize: 12, background: "#FAFAF8" }}
           >
-            {districts.map((d) => (
-              <option key={d.slug} value={d.slug}>{d.name}</option>
+            {Object.entries(
+              districts.reduce((acc, d) => {
+                const stateName = d.state?.name ?? "Other";
+                (acc[stateName] = acc[stateName] || []).push(d);
+                return acc;
+              }, {} as Record<string, typeof districts>)
+            ).map(([stateName, stateDistricts]) => (
+              <optgroup key={stateName} label={stateName}>
+                {stateDistricts.map((d) => (
+                  <option key={d.slug} value={d.slug}>{d.name}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <button

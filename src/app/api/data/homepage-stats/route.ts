@@ -67,7 +67,7 @@ export async function GET() {
     console.error("[homepage-stats]", err);
     // Return sensible defaults on DB error
     return NextResponse.json({
-      activeDistricts: 3,
+      activeDistricts: 9,
       modulesPerDistrict: 29,
       totalDataPoints: 12847,
       mostRecentAt: new Date().toISOString(),

@@ -79,10 +79,11 @@ const SCALE_COSTS = [
 ];
 
 const COST_BREAKDOWN = [
-  { label: "Servers & Database (Vercel + Neon + Railway)", pct: 40, color: "#2563EB" },
-  { label: "Data APIs & Collection Infrastructure", pct: 25, color: "#16A34A" },
-  { label: "Development & Maintenance", pct: 20, color: "#7C3AED" },
-  { label: "Domain, CDN & Security", pct: 15, color: "#F59E0B" },
+  { label: "Servers & Database (Vercel Pro + Neon + Railway)", pct: 35, color: "#2563EB" },
+  { label: "AI Analysis & Intelligence (Anthropic + Gemini API)", pct: 25, color: "#7C3AED" },
+  { label: "Data Collection Infrastructure (APIs + Processing)", pct: 20, color: "#16A34A" },
+  { label: "Development & Maintenance", pct: 10, color: "#F59E0B" },
+  { label: "Domain, CDN & Security", pct: 10, color: "#6B7280" },
 ];
 
 export default function SupportPage() {
@@ -300,7 +301,7 @@ export default function SupportPage() {
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#1A1A1A", marginBottom: 4 }}>Jayanth M B</div>
               <div style={{ fontSize: 12, color: "#9B9B9B", marginBottom: 16 }}>
-                Developer from Karnataka · Creator, ForThePeople.in
+                Developer from Mandya, Karnataka · Creator, ForThePeople.in
               </div>
               <p style={{ fontSize: 14, color: "#1A1A1A", lineHeight: 1.8, margin: 0 }}>
                 &ldquo;I&apos;m a solo developer from Karnataka who believes government data should be free
@@ -363,21 +364,28 @@ export default function SupportPage() {
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              { emoji: "⭐", label: "Star on GitHub", desc: "Help us get visibility — star the repository" },
-              { emoji: "🐦", label: "Share on social media", desc: "Share ForThePeople.in with #OpenDataIndia" },
-              { emoji: "💻", label: "Contribute code", desc: "We're open source — PRs welcome on GitHub" },
-              { emoji: "📊", label: "Send district data", desc: "Know RTI documents or official reports? Share them" },
+              { emoji: "⭐", label: "Star on GitHub", desc: "Help us get visibility — star the repository", href: "https://github.com/jayanthmb14/forthepeople", external: true },
+              { emoji: "🐦", label: "Share on social media", desc: "Share ForThePeople.in with #OpenDataIndia", href: "https://twitter.com/intent/tweet?text=Check%20out%20ForThePeople.in%20%E2%80%94%20free%20government%20data%20dashboards%20for%20Indian%20districts%20%23OpenDataIndia%20%23ForThePeople&url=https://forthepeople.in", external: true },
+              { emoji: "💻", label: "Contribute code", desc: "We're open source — PRs welcome on GitHub", href: "https://github.com/jayanthmb14/forthepeople/issues", external: true },
+              { emoji: "📊", label: "Send district data", desc: "Know RTI documents or official reports? Share them", href: "/en/feedback", external: false },
             ].map((item) => (
-              <div key={item.label} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <a
+                key={item.label}
+                href={item.href}
+                target={item.external ? "_blank" : undefined}
+                rel={item.external ? "noopener noreferrer" : undefined}
+                className="support-help-item"
+                style={{ display: "flex", alignItems: "flex-start", gap: 12, textDecoration: "none", padding: "8px 10px", borderRadius: 8 }}
+              >
                 <span style={{ fontSize: 20, flexShrink: 0 }}>{item.emoji}</span>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{item.label}</div>
                   <div style={{ fontSize: 12, color: "#6B6B6B" }}>{item.desc}</div>
                 </div>
-              </div>
+              </a>
             ))}
             {/* Report data errors — uses feedback modal */}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "8px 10px" }}>
               <span style={{ fontSize: 20, flexShrink: 0 }}>🐛</span>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>Report data errors</div>
@@ -422,6 +430,19 @@ export default function SupportPage() {
 
         {/* Live Contributor Wall */}
         <ContributorWallClient />
+
+        {/* International payment disclaimer */}
+        <div style={{
+          background: "#FAFAF8", border: "0.5px solid #E8E8E4", borderRadius: 10,
+          padding: "14px 18px", fontSize: 13, color: "#6B6B6B", lineHeight: 1.6, marginTop: 24,
+        }}>
+          🌏 International supporters: We currently accept payments within India only.
+          If you&apos;d like to contribute from outside India, please DM us on Instagram{" "}
+          <a href="https://www.instagram.com/jayanth_m_b/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563EB", textDecoration: "none", fontWeight: 600 }}>
+            @jayanth_m_b
+          </a>{" "}
+          and we&apos;ll arrange an alternative payment method.
+        </div>
 
         {/* Back link */}
         <div style={{ textAlign: "center", marginTop: 40 }}>
