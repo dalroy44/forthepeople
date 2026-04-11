@@ -1,6 +1,6 @@
 # CLAUDE CODE MASTER PROMPT — COMPLETE UI/UX OVERHAUL + FIXES
 # ═══════════════════════════════════════════════════════════
-# Read BLUEPRINT-UNIFIED.md and FORTHEPEOPLE-SKILL-UPDATED.md first.
+# Read docs/BLUEPRINT-UNIFIED.md and FORTHEPEOPLE-SKILL-UPDATED.md first.
 # Execute ALL tasks in ONE session. Deploy ONCE at the end.
 #
 # ⚠️ CRITICAL RULES:
@@ -533,7 +533,7 @@ Create a reusable `<EmptyState module="weather" />` component used across all pa
 
 ## TASK 10: UPDATE ALL PROJECT FILES
 
-### 10A. Update FORTHEPEOPLE-SKILL-UPDATED.md — Add:
+### 10A. Update docs/FORTHEPEOPLE-SKILL-UPDATED.md — Add:
 
 ```markdown
 ## UI/UX Overhaul (March 27, 2026)
@@ -578,7 +578,7 @@ Create a reusable `<EmptyState module="weather" />` component used across all pa
 - Clean card design matching #FAFAF8 aesthetic
 ```
 
-### 10B. Update BLUEPRINT-UNIFIED.md Progress Tracker — Add:
+### 10B. Update docs/BLUEPRINT-UNIFIED.md Progress Tracker — Add:
 
 ```
 POST-LAUNCH IMPROVEMENTS:

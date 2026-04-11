@@ -16,8 +16,8 @@
    - Git commit with message: "Phase N: [description]"
    - Deploy to Vercel (git push)
    - Update PROGRESS TRACKER at bottom of this file
-   - Update BLUEPRINT-UNIFIED.md with changes made
-   - Update FORTHEPEOPLE-SKILL-UPDATED.md with new state
+   - Update docs/BLUEPRINT-UNIFIED.md with changes made
+   - Update docs/FORTHEPEOPLE-SKILL-UPDATED.md with new state
 5. Move to next phase
 ```
 

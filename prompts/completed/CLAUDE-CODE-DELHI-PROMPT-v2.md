@@ -537,7 +537,7 @@ This script will be run LATER (not now) when I'm ready to go live with all Delhi
 //
 // After running:
 //   - Update src/lib/constants/districts.ts → set all Delhi districts active: true
-//   - Update BLUEPRINT-UNIFIED.md and FORTHEPEOPLE-SKILL-UPDATED.md
+//   - Update docs/BLUEPRINT-UNIFIED.md and FORTHEPEOPLE-SKILL-UPDATED.md
 //   - git commit + git push to deploy
 // ═══════════════════════════════════════════════════════════
 import { PrismaClient } from '../src/generated/prisma';
@@ -595,8 +595,8 @@ async function main() {
   console.log(`\n🎉 Done! Activated ${activated} districts.`);
   console.log('\n📋 NEXT STEPS:');
   console.log('  1. Edit src/lib/constants/districts.ts → set all Delhi districts active: true');
-  console.log('  2. Update BLUEPRINT-UNIFIED.md (pilot districts count)');
-  console.log('  3. Update FORTHEPEOPLE-SKILL-UPDATED.md (pilot districts count)');
+  console.log('  2. Update docs/BLUEPRINT-UNIFIED.md (pilot districts count)');
+  console.log('  3. Update docs/FORTHEPEOPLE-SKILL-UPDATED.md (pilot districts count)');
   console.log('  4. Update README.md (currently live section)');
   console.log('  5. git add -A && git commit -m "feat: activate all 11 Delhi districts"');
   console.log('  6. git push origin main  ← THIS deploys to Vercel');
@@ -622,7 +622,7 @@ Use real data — search for each district's DM, DCP, police stations, schools.
 
 ## STEP 6: UPDATE PROJECT DOCUMENTATION (but DO NOT deploy)
 
-### A. Update BLUEPRINT-UNIFIED.md
+### A. Update docs/BLUEPRINT-UNIFIED.md
 Under "Current Pilot Scores" add:
 ```
 Delhi (New Delhi):  [pending — run health score calculation after testing]
@@ -630,14 +630,14 @@ Delhi (New Delhi):  [pending — run health score calculation after testing]
 
 Update the scaling section to mention Delhi as a pending expansion.
 
-### B. Update FORTHEPEOPLE-SKILL-UPDATED.md
+### B. Update docs/FORTHEPEOPLE-SKILL-UPDATED.md
 Update CURRENT STATE:
 ```
 PILOT DISTRICTS:  4 active (Mandya, Mysuru, Bengaluru Urban — Karnataka; New Delhi — Delhi)
                   + 10 Delhi districts ready to activate
 ```
 
-### C. Update SCALING-CHECKLIST.md
+### C. Update docs/SCALING-CHECKLIST.md
 Add at the bottom under a new section:
 ```
 ## DELHI EXPANSION STATUS (April 2026)

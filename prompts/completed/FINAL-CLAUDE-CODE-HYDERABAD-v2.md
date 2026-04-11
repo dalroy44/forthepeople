@@ -1910,7 +1910,7 @@ The TGSPDCL parser returns empty results because their portal doesn't have a scr
 1. **News action engine** — When news articles mention "power cut Hyderabad" or "TGSPDCL outage", the AI classifier auto-creates PowerOutage records with confidence scoring
 2. **Manual seed** — You can seed known planned outages in the seed file
 
-### Update BLUEPRINT-UNIFIED.md:
+### Update docs/BLUEPRINT-UNIFIED.md:
 
 Add to Section 14 (SCRAPING SOURCES) under the power entry:
 ```
@@ -1924,7 +1924,7 @@ TANGEDCO:      tangedco.org (Tamil Nadu — TODO: add parser)
 BSES/Tata:     Multiple DISCOMs (Delhi — TODO: add parser)
 ```
 
-### Update DISTRICT-EXPANSION-SKILL.md:
+### Update docs/DISTRICT-EXPANSION-SKILL.md:
 
 Add to the seeding checklist:
 ```
