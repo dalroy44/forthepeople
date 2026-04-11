@@ -76,9 +76,28 @@ export async function POST(req: NextRequest) {
     const badgeType = tierConfig?.badgeType ?? null;
     const amount = tierConfig?.amount ?? 0;
 
-    // Create Supporter record
-    await prisma.supporter.create({
-      data: {
+    // Create or update Supporter record (upsert to handle webhook race condition)
+    await prisma.supporter.upsert({
+      where: { paymentId: razorpay_payment_id },
+      update: {
+        name: name.trim(),
+        email: email?.trim() || null,
+        tier,
+        razorpaySubscriptionId: razorpay_subscription_id,
+        isRecurring: true,
+        subscriptionStatus: "active",
+        activatedAt: new Date(),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        districtId: districtId || null,
+        stateId: stateId || null,
+        socialLink: socialLink?.trim() || null,
+        socialPlatform: social?.platform ?? null,
+        badgeType,
+        message: message?.trim().slice(0, 100) || null,
+        isPublic: isPublic !== false,
+        status: "success",
+      },
+      create: {
         name: name.trim(),
         email: email?.trim() || null,
         amount,
@@ -94,7 +113,7 @@ export async function POST(req: NextRequest) {
         socialLink: socialLink?.trim() || null,
         socialPlatform: social?.platform ?? null,
         badgeType,
-        badgeLevel: null, // too early for a badge
+        badgeLevel: null,
         message: message?.trim().slice(0, 100) || null,
         isPublic: isPublic !== false,
         status: "success",

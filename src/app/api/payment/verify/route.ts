@@ -64,21 +64,25 @@ export async function POST(req: NextRequest) {
     });
 
     // Also save to Supporter table (for admin /supporters view)
-    prisma.supporter.upsert({
-      where: { paymentId: razorpay_payment_id },
-      update: { status: "success" },
-      create: {
-        name: contribution.name,
-        email: contribution.email ?? null,
-        amount: contribution.amount / 100, // paise → rupees
-        currency: contribution.currency,
-        tier: contribution.tier ?? "one-time",
-        paymentId: razorpay_payment_id,
-        orderId: razorpay_order_id,
-        status: "success",
-        message: contribution.message ?? null,
-      },
-    }).catch(() => {}); // fire-and-forget, non-fatal
+    try {
+      await prisma.supporter.upsert({
+        where: { paymentId: razorpay_payment_id },
+        update: { status: "success" },
+        create: {
+          name: contribution.name,
+          email: contribution.email ?? null,
+          amount: contribution.amount / 100, // paise → rupees
+          currency: contribution.currency,
+          tier: contribution.tier ?? "one-time",
+          paymentId: razorpay_payment_id,
+          orderId: razorpay_order_id,
+          status: "success",
+          message: contribution.message ?? null,
+        },
+      });
+    } catch (supporterErr) {
+      console.error("[verify] Supporter upsert failed:", supporterErr);
+    }
 
     // Invalidate contributors cache so wall refreshes immediately
     await cacheSet(CONTRIBUTORS_CACHE_KEY, null, 1);
