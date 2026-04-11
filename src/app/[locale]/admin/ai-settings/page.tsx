@@ -43,19 +43,19 @@ const ANTHROPIC_MODELS = [
 // The 3 provider options — maps to (activeProvider, anthropicSource) pairs
 const PROVIDERS = [
   {
-    id: "opuscode",
+    id: "anthropic_legacy",
     icon: "⚡",
-    name: "OpusCode.pro Proxy",
-    tagline: "Cheaper Anthropic via proxy",
-    desc: "Access Claude models at reduced cost. Same API interface, lower price. Ideal for high-volume tasks.",
+    name: "Anthropic (Legacy)",
+    tagline: "Not in use — routed via OpenRouter",
+    desc: "Previously used via proxy. All calls now route through OpenRouter which handles Anthropic models directly.",
     keyName: "anthropic",
-    keyLabel: "OpusCode API Key",
-    keyPlaceholder: "sk-ant-… or opuscode key",
+    keyLabel: "Anthropic API Key (legacy)",
+    keyPlaceholder: "sk-ant-…",
     activeProvider: "anthropic",
-    anthropicSource: "opuscode",
-    color: "#7C3AED",
-    bgColor: "#F5F3FF",
-    borderActive: "#7C3AED",
+    anthropicSource: "official",
+    color: "#9B9B9B",
+    bgColor: "#F5F5F0",
+    borderActive: "#9B9B9B",
   },
   {
     id: "official",
@@ -282,9 +282,9 @@ export default function AISettingsPage() {
         <div style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A", marginBottom: 8 }}>Model Routing</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
           {[
-            { purpose: "Classification / Summaries", model: "google/gemini-2.5-flash:free", cost: "Free" },
-            { purpose: "District Insights / Fact-check", model: "anthropic/claude-sonnet-4", cost: "~$3/M tokens" },
-            { purpose: "Document Analysis", model: "google/gemini-2.5-pro", cost: "~$1.25/M tokens" },
+            { purpose: "Classification / Summaries / Format", model: "google/gemma-4-26b-a4b-it:free", cost: "Free" },
+            { purpose: "District Insights / News / Documents", model: "google/gemini-2.5-pro", cost: "~$1.25/M tokens" },
+            { purpose: "Fact-check (critical accuracy)", model: "anthropic/claude-sonnet-4", cost: "~$3/M tokens" },
           ].map((r) => (
             <div key={r.purpose} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "#FAFAF8", borderRadius: 6, fontSize: 12 }}>
               <span style={{ color: "#6B6B6B" }}>{r.purpose}</span>

@@ -28,25 +28,25 @@ export interface AIResponse {
 // ── Tiered model routing ────────────────────────────────────
 function getModelForPurpose(purpose: string): string {
   switch (purpose) {
-    // TIER 1 — Free models
+    // TIER 1 — Free (₹0) — internal admin tasks only
     case "classify":
     case "summarize":
     case "format":
-      return "google/gemini-2.5-flash:free";
+      return "google/gemma-4-26b-a4b-it:free";
 
-    // TIER 2 — Mid-range (user-facing quality)
+    // TIER 2 — Affordable at scale — user-facing content
     case "insight":
-    case "fact-check":
     case "news-analysis":
-      return "anthropic/claude-sonnet-4";
-
-    // TIER 3 — Large context (government documents)
     case "document":
     case "document-large":
       return "google/gemini-2.5-pro";
 
+    // TIER 3 — Premium — only for critical accuracy
+    case "fact-check":
+      return "anthropic/claude-sonnet-4";
+
     default:
-      return "google/gemini-2.5-flash:free";
+      return "google/gemma-4-26b-a4b-it:free";
   }
 }
 
@@ -232,8 +232,8 @@ export async function callAI(request: AIRequest): Promise<AIResponse> {
       .catch(() => {});
 
     // Fallback: try the free model if the primary model failed
-    if (model !== "google/gemini-2.5-flash:free") {
-      const fbModel = "google/gemini-2.5-flash:free";
+    if (model !== "google/gemma-4-26b-a4b-it:free") {
+      const fbModel = "google/gemma-4-26b-a4b-it:free";
       console.log(`[AI] Falling back to ${fbModel}`);
       const fbStart = Date.now();
       try {

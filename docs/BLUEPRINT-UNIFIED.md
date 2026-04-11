@@ -120,6 +120,10 @@ Icons:        lucide-react
 i18n:         next-intl v4
 Payments:     razorpay SDK + Razorpay Live checkout
 Email:        resend v6 (2FA recovery emails + admin alert emails)
+AI provider:  OpenRouter (unified gateway — tiered model routing)
+              Tier 1 (free): google/gemma-4-26b-a4b-it:free (classify, summarize)
+              Tier 2 (scale): google/gemini-2.5-pro (insights, news, documents)
+              Tier 3 (premium): anthropic/claude-sonnet-4 (fact-check only)
 Monitoring:   @sentry/nextjs (error tracking, production only)
 Alerts:       src/lib/admin-alerts.ts (email + DB alerts for scrapers, feedback, payments)
 Analytics:    Plausible (cookieless, DPDP-friendly, one script tag)
@@ -1428,6 +1432,16 @@ Post-launch: District Health Score  COMPLETE
   - 10-category algorithm in src/lib/health-score.ts
   - Pre-computed weekly, stored in DistrictHealthScore
   - Shown on homepage district cards + district overview
+
+OpenRouter Migration + Admin Upgrade COMPLETE (2026-04-12)
+  - OpenRouter replaces OpusCode.pro as sole AI provider
+  - Tiered routing: Gemma 4 free → Gemini 2.5 Pro → Claude Sonnet 4
+  - AI feedback classifier with legal guardrails (DPDP, defamation, PII)
+  - Feedback reply system via Resend email
+  - AI usage tracking (AIUsageLog) + subscription manager (Subscription)
+  - Admin panel: 10 tabs (added Costs), AI Settings shows OpenRouter
+  - Feedback tab: AI classification, flags, warnings, inline reply
+  - All OpusCode.pro references removed from codebase
 
 Bug Fixes from User Feedback        COMPLETE (2026-04-12)
   - Schools: student:teacher ratio color INVERTED (green=good, red=bad)
