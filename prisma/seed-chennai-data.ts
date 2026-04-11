@@ -61,7 +61,8 @@ async function main() {
 
         // ── Tier 4: Administration ──
         { districtId, name: "District Collector, Chennai", role: "District Collector", tier: 4, source: "District Administration" },
-        { districtId, name: "R.N. Ravi", role: "Governor of Tamil Nadu", tier: 4, source: "Raj Bhavan" },
+        { districtId, name: "Rajendra Vishwanath Arlekar", role: "Governor of Tamil Nadu", tier: 4, since: "March 2026", source: "lokbhavan.tn.gov.in" },
+        // NOTE: TN Assembly elections April 23, 2026 — verify CM after May 4, 2026
         { districtId, name: "M.K. Stalin", role: "Chief Minister of Tamil Nadu", tier: 4, party: "DMK", source: "TN Government" },
         { districtId, name: "Chief Secretary, Tamil Nadu", role: "Chief Secretary", tier: 4, source: "TN Government" },
 
