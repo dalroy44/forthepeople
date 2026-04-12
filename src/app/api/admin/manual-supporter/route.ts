@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { cacheSet } from "@/lib/cache";
+import { logAuditAuto } from "@/lib/audit-log";
 
 const COOKIE = "ftp_admin_v1";
 
@@ -69,6 +70,13 @@ export async function POST(req: NextRequest) {
   });
 
   await invalidateContributorCaches();
+
+  await logAuditAuto({
+    action: "supporter_add_manual",
+    resource: "Supporter",
+    resourceId: supporter.id,
+    details: { name: supporter.name, amount, tier, method: body.paymentMethod ?? null },
+  });
 
   return NextResponse.json({ supporter });
 }

@@ -7,6 +7,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import SecurityExtras from "./SessionInfoCard";
+
+function SecurityExtrasInline() {
+  const params = useParams<{ locale: string }>();
+  const locale = (params?.locale as string) || "en";
+  return <SecurityExtras locale={locale} />;
+}
 
 interface AdminAuthInfo {
   totpEnabled: boolean;
@@ -173,9 +181,11 @@ export default function SecurityPage() {
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: "#1A1A1A", margin: 0 }}>🔐 Security</h1>
         <div style={{ fontSize: 13, color: "#6B6B6B", marginTop: 4 }}>
-          Two-factor authentication, recovery options, and login history.
+          Two-factor authentication, recovery options, team members, and audit log.
         </div>
       </div>
+
+      <SecurityExtrasInline />
 
       {/* Card 1: Two-Factor Authentication */}
       <div style={cardStyle}>

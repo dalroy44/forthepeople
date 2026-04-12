@@ -26,6 +26,7 @@ import {
   LogOut,
   TrendingDown,
   Globe,
+  KeyRound,
 } from "lucide-react";
 import ModuleHelp from "./ModuleHelp";
 import { logoutAction } from "@/app/[locale]/admin/actions";
@@ -42,6 +43,7 @@ type ItemId =
   | "analytics"
   | "traffic"
   | "security"
+  | "vault"
   | "feedback";
 
 interface NavItem {
@@ -184,7 +186,15 @@ const GROUPS: Group[] = [
         buildHref: (locale) => `/${locale}/admin/security`,
         inPageTab: false,
         routeSegment: "security",
-        help: "Manage login, two-factor authentication, and backup codes",
+        help: "Session info, 2FA setup, backup codes, team members, audit log",
+      },
+      {
+        id: "vault",
+        label: "API Vault",
+        icon: KeyRound,
+        buildHref: (locale) => `/${locale}/admin?tab=vault`,
+        inPageTab: true,
+        help: "Encrypted API key storage with a separate 2FA gate (10-min session)",
       },
     ],
   },
@@ -511,6 +521,7 @@ function resolveActiveItem(
   if (tab === "costs") return "costs";
   if (tab === "expenditure") return "expenditure";
   if (tab === "traffic") return "traffic";
+  if (tab === "vault") return "vault";
   return "dashboard";
 }
 

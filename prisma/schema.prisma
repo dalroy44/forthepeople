@@ -1144,12 +1144,21 @@ model Contribution {
 
 model AdminAPIKey {
   id              String    @id @default(cuid())
-  provider        String    @unique  // "gemini" | "anthropic" | "razorpay_key" | "razorpay_secret" | "razorpay_webhook"
+  provider        String    @unique  // "openrouter" | "razorpay_key" | "razorpay_secret" | "razorpay_webhook" | "resend" | ...
   encryptedKey    String
   label           String?
   isActive        Boolean   @default(true)
   lastTestedAt    DateTime?
   lastTestResult  String?
+
+  // April 2026 — Vault enhancements
+  envVarName      String?              // e.g. "OPENROUTER_API_KEY"
+  maskedKey       String?              // "sk-or-v1-840...a7d" — safe to display without unlock
+  notes           String?
+  lastAccessedAt  DateTime?
+  lastAccessedBy  String?              // AdminUser.id (or "admin" for legacy single-user)
+  addedBy         String?              // AdminUser.id (or "admin" for legacy single-user)
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
@@ -1264,6 +1273,51 @@ model FactCheckStatus {
 
   @@unique([districtId, module])
   @@index([districtId])
+}
+
+// ═══ MULTI-USER ADMIN (foundation — per-user auth is future work) ══════
+// AdminAuth (below) is still the singleton auth record used by the cookie-based login.
+// AdminUser is the roster for future per-user auth + role-based UI filtering.
+model AdminUser {
+  id              String    @id @default(cuid())
+  username        String    @unique
+  email           String?   @unique
+  passwordHash    String                             // bcryptjs hash
+  role            String    @default("viewer")       // "owner" | "admin" | "viewer"
+  permissions     Json      @default("[]")           // Array of tab slugs (empty = use role defaults)
+  isActive        Boolean   @default(true)
+  lastLoginAt     DateTime?
+  lastLoginIP     String?
+  failedAttempts  Int       @default(0)
+  lockedUntil     DateTime?
+  totpSecret      String?
+  totpEnabled     Boolean   @default(false)
+  createdBy       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  auditLogs       AdminAuditLog[]
+
+  @@index([username])
+  @@index([role])
+}
+
+model AdminAuditLog {
+  id              String     @id @default(cuid())
+  adminUserId     String?
+  adminUser       AdminUser? @relation(fields: [adminUserId], references: [id])
+  actorLabel      String?                             // "admin" (legacy) or AdminUser.username
+  action          String                              // "login" | "view_key" | "add_expense" | ...
+  resource        String?                             // Table/resource name
+  resourceId      String?
+  details         Json?
+  ipAddress       String?
+  userAgent       String?
+  timestamp       DateTime   @default(now())
+
+  @@index([adminUserId, timestamp])
+  @@index([action, timestamp])
+  @@index([resource, timestamp])
 }
 
 model AdminAuth {

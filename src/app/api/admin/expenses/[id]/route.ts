@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma";
+import { logAuditAuto } from "@/lib/audit-log";
 
 const COOKIE = "ftp_admin_v1";
 
@@ -41,6 +42,12 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
   if (body.notes !== undefined) data.notes = body.notes ?? null;
 
   const expense = await prisma.expense.update({ where: { id }, data });
+  await logAuditAuto({
+    action: "expense_edit",
+    resource: "Expense",
+    resourceId: id,
+    details: { fields: Object.keys(data) },
+  });
   return NextResponse.json({ expense });
 }
 
@@ -50,5 +57,6 @@ export async function DELETE(_req: NextRequest, ctx: RouteCtx) {
   }
   const { id } = await ctx.params;
   await prisma.expense.delete({ where: { id } });
+  await logAuditAuto({ action: "expense_delete", resource: "Expense", resourceId: id });
   return NextResponse.json({ ok: true });
 }

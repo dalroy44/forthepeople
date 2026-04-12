@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { estimateReportCost, generatePlatformReport } from "@/lib/platform-analysis";
+import { logAuditAuto } from "@/lib/audit-log";
 
 const COOKIE = "ftp_admin_v1";
 
@@ -59,6 +60,12 @@ export async function POST(req: NextRequest) {
   }
   try {
     const report = await generatePlatformReport("manual");
+    await logAuditAuto({
+      action: "platform_report_generate",
+      resource: "PlatformReport",
+      resourceId: report.id,
+      details: { type: "manual", model: report.aiModel, costUSD: report.aiCostUSD },
+    });
     return NextResponse.json({ report });
   } catch (err) {
     return NextResponse.json(

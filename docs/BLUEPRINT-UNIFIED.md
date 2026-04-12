@@ -1998,6 +1998,34 @@ Powers the Traffic tab with real-time visitors, top pages, referrers, devices, c
 - Graceful: setup instructions when unconfigured.
 - "View Full Analytics" button links to plausible.io dashboard.
 
+### API Key Vault (April 2026)
+- Models: `AdminAPIKey` (extended: envVarName, maskedKey, notes, lastAccessedAt, lastAccessedBy, addedBy)
+- Gate: separate TOTP verification (`ftp_vault_session` cookie, 10-min Redis TTL, bound to admin
+  cookie hash so the session can't be replayed from another browser)
+- Reveal: POST `/api/admin/vault/[id]/reveal` — decrypts via `src/lib/encryption.ts`, rate limited
+  to 5 reveals per session, auto-hidden after 30s client-side
+- `/api/admin/vault` GET (list masked + env reference), POST (add/upsert)
+- `/api/admin/vault/[id]` GET, PATCH, DELETE
+- `/api/admin/vault/unlock` POST, `/api/admin/vault/session` GET/DELETE
+- Seed: `scripts/seed-vault-keys.ts` — reads known env vars + stores encrypted. Idempotent.
+- Every vault action writes an AdminAuditLog entry.
+
+### Multi-user Admin (Foundation — future work)
+- Models: `AdminUser` (username, passwordHash [bcryptjs], role, permissions, totpSecret),
+  `AdminAuditLog` (actorLabel, action, resource, resourceId, details, ipAddress, userAgent)
+- Roles: `owner` (full access), `admin` (no vault/users), `viewer` (Dashboard/Health/Analytics/Traffic)
+- `/api/admin/users` GET/POST, `/api/admin/users/[id]` PATCH/DELETE (soft delete → isActive=false)
+- Scaffolding only: ADMIN_PASSWORD cookie still gates all admin routes. Per-user login remains
+  a future task — the table is populated so role-based UI filtering can be wired later.
+
+### Audit Logging
+- `src/lib/audit-log.ts`: `logAudit()` + `logAuditAuto()` (auto-extracts IP + UA from headers).
+- Never throws — audit write failures are logged to stderr but don't break the main operation.
+- Viewer: `/api/admin/audit-log` with filters (action, adminUserId, resource, date range),
+  rendered as paginated table on Security page with CSV export.
+- Instrumented: vault ops, manual-supporter, supporter edit, expense add/edit/delete,
+  platform-report manual generation, user create/update/deactivate.
+
 ### AI Platform Analysis
 Weekly AI-generated platform health report with action items + cost tips.
 - Model: `PlatformReport` (type, summary, actionItems, metrics, costTips, growthNotes,

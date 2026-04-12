@@ -50,8 +50,15 @@ docs/GEO-AUDIT-REPORT.md           ← SEO/GEO audit results
 
 ## Current State (April 13, 2026)
 - 10 live districts, 7 states
-- Admin: unified left sidebar (12 tabs grouped: Overview, Operations, AI & Data, Finance,
-  Analytics [Analytics + Traffic], Security, Community). URL `?tab=` routing for in-page sub-tabs.
+- Admin: unified left sidebar (13 tabs grouped: Overview, Operations, AI & Data, Finance,
+  Analytics [Analytics + Traffic], Security [Access & 2FA + API Vault], Community).
+  URL `?tab=` routing for in-page sub-tabs.
+- API Key Vault: encrypted key storage with separate 10-min TOTP session (Redis-backed).
+  Reveals are rate-limited + audit logged.
+- Multi-user admin: foundation only (AdminUser + AdminAuditLog tables, user management UI).
+  ADMIN_PASSWORD cookie still gates login — per-user auth is future work.
+- Audit logging: src/lib/audit-log.ts instrumented across vault ops, supporters, expenses,
+  platform reports, user management.
 - Sentry errors pulled directly into Alerts & Logs via REST API (SENTRY_API_TOKEN).
 - Plausible Stats API powers the Traffic tab (live visitors, pages, referrers, devices, countries).
 - AI Platform Report: weekly Gemini 2.5 Pro analysis with action items + cost tips

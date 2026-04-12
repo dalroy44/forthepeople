@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { cacheSet } from "@/lib/cache";
 import type { Prisma } from "@/generated/prisma";
+import { logAuditAuto } from "@/lib/audit-log";
 
 const COOKIE = "ftp_admin_v1";
 
@@ -66,6 +67,13 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
 
   const supporter = await prisma.supporter.update({ where: { id }, data });
   await Promise.all(CONTRIBUTOR_CACHE_KEYS.map((k) => cacheSet(k, null, 1)));
+
+  await logAuditAuto({
+    action: "supporter_edit",
+    resource: "Supporter",
+    resourceId: id,
+    details: { fields: Object.keys(data) },
+  });
 
   return NextResponse.json({ supporter });
 }
