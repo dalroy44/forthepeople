@@ -36,6 +36,16 @@ docs/GEO-AUDIT-REPORT.md           ← SEO/GEO audit results
 4. Commit and push: `git add -A && git commit -m "..." && git push origin main`
 5. Documentation files must NEVER live outside this repo
 
+## AI Cost Rules (CRITICAL)
+- `news-analysis` purpose → free model (NOT Gemini Pro). News classification is
+  pick-a-category + extract-a-few-fields — the free tier handles it fine.
+- `insight` purpose → Gemini 2.5 Pro. Cron runs twice daily (0 0,12 * * *).
+- `fact-check` → Claude Sonnet (manual trigger only).
+- Before generating an insight, call `hasDataChanged()` — skip if nothing new.
+- In scraper news pipeline: run keyword classifier first, call AI only when
+  keyword returns "news"/null OR the article lands in an actionable module
+  (infrastructure, alerts, exams, staffing, etc.) that wants data extraction.
+
 ## Key Rules
 - NEVER use "scraper/scraping/scraped" in user-facing text
 - NEVER hardcode district data — everything from DB

@@ -160,3 +160,96 @@ export async function getStoredInsight(districtId: string, module: string) {
 export function isExpired(expiresAt: Date): boolean {
   return new Date() >= expiresAt;
 }
+
+// ── Data-change detection ─────────────────────────────────
+// Before regenerating an insight, check whether the underlying source data
+// changed since the last insight was written. Static modules (leaders, budget,
+// schools) rarely change after seeding, so this check skips ~60-70% of AI
+// calls per generate-insights cron run.
+//
+// Returns true if there is new/updated data OR the insight is older than the
+// per-module staleness ceiling (14 days for static modules). On any error we
+// return true — fail-open so we never silently stop regenerating.
+const STATIC_MODULE_CEILING_MS = 14 * 24 * 60 * 60 * 1000;
+
+export async function hasDataChanged(districtId: string, module: string): Promise<boolean> {
+  try {
+    const lastInsight = await prisma.aIModuleInsight.findFirst({
+      where: { districtId, module },
+      orderBy: { generatedAt: "desc" },
+      select: { generatedAt: true },
+    });
+    if (!lastInsight) return true;
+
+    const since = lastInsight.generatedAt;
+    const ageMs = Date.now() - since.getTime();
+
+    switch (module) {
+      case "weather":
+        return !!(await prisma.weatherReading.findFirst({
+          where: { districtId, recordedAt: { gt: since } },
+          select: { id: true },
+        }));
+      case "crops":
+        return !!(await prisma.cropPrice.findFirst({
+          where: { districtId, date: { gt: since } },
+          select: { id: true },
+        }));
+      case "water":
+        return !!(await prisma.damReading.findFirst({
+          where: { districtId, recordedAt: { gt: since } },
+          select: { id: true },
+        }));
+      case "news":
+      case "alerts":
+        return !!(await prisma.newsItem.findFirst({
+          where: { districtId, publishedAt: { gt: since } },
+          select: { id: true },
+        }));
+      case "power":
+        return !!(await prisma.powerOutage.findFirst({
+          where: { districtId, createdAt: { gt: since } },
+          select: { id: true },
+        }));
+      case "infrastructure":
+        return !!(await prisma.infraProject.findFirst({
+          where: { districtId, updatedAt: { gt: since } },
+          select: { id: true },
+        }));
+      case "leaders":
+        // Leader has no updatedAt — fall back to ceiling.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+      case "police":
+        // PoliceStation has no updatedAt — ceiling.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+      case "education":
+        // School has no timestamp field we can use — ceiling.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+      case "budget":
+        // BudgetEntry has no updatedAt — ceiling.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+      case "elections":
+        // ElectionResult — ceiling.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+      case "schemes":
+        // Scheme has no timestamp field — ceiling.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+      case "courts":
+        // CourtStat — ceiling.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+      case "industries":
+        // LocalIndustry — ceiling.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+      case "famous-personalities":
+        // FamousPersonality — ceiling.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+      default:
+        // Unknown module — fall back to time-based ceiling so we don't freeze
+        // insights forever.
+        return ageMs > STATIC_MODULE_CEILING_MS;
+    }
+  } catch (err) {
+    console.warn("[insights] hasDataChanged error — fail open:", err);
+    return true;
+  }
+}

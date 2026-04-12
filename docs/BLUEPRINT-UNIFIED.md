@@ -2030,9 +2030,11 @@ Powers the Traffic tab with real-time visitors, top pages, referrers, devices, c
 - New tab under ⚙️ Operations: `/admin?tab=content-editor`.
 - Selects State → District, shows module grid with editable cards.
 - Inline table editor for a vetted allowlist (`CONTENT_MODULES` in
-  `src/app/api/admin/content/route.ts`): leaders, infrastructure, schemes,
-  offices, police, schools, famous personalities. Scraper-generated modules
-  (weather/news/crops/dams/power/alerts) stay read-only.
+  `src/app/api/admin/content/route.ts`): 13 modules — leaders, infrastructure,
+  schemes, offices, police, schools, famous personalities, budget entries,
+  court stats, industries, service guides, election results, bus routes.
+  Scraper-generated modules (weather/news/crops/dams/power/alerts) stay read-only.
+  Hospital module skipped (no Hospital Prisma model yet).
 - `GET /api/admin/content?district=&module=` lists editable rows + field list.
 - `POST /api/admin/content/save` applies updates/creates/deletes, invalidates
   Redis cache keys (`ftp:<slug>:<module>` + `ftp:<slug>:overview`), and
@@ -2061,6 +2063,20 @@ Powers the Traffic tab with real-time visitors, top pages, referrers, devices, c
   OpenRouter spend dramatically. `FREE_FALLBACK_MODELS` reordered to try
   `qwen/qwen3-235b-a22b:free` first since OSS-20b:free has been hitting
   200 req/day limits.
+- **News classification (April 13):** `news-analysis` purpose moved from
+  Gemini 2.5 Pro ($1.25/M) to `openai/gpt-oss-20b:free`. In `scraper/jobs/news.ts`
+  the keyword classifier runs first — AI only fires when keyword returns
+  "news"/null OR the article lands in an `ACTIONABLE_MODULES` category
+  (infrastructure / alerts / exams / staffing / leaders / police / health /
+  power / schemes) where we want structured data extraction.
+- **Data-change detection (April 13):** `hasDataChanged(districtId, module)`
+  in `src/lib/insight-generator.ts` checks whether the source table has rows
+  newer than the last AIModuleInsight.generatedAt. For modules whose tables
+  lack an updatedAt/createdAt timestamp (Leader, PoliceStation, School,
+  BudgetEntry, ElectionResult, Scheme, CourtStat, LocalIndustry,
+  FamousPersonality) the check falls back to a 14-day staleness ceiling.
+  Skipped generations log to stdout, not AdminAlert.
+- **Estimated daily spend after all cuts:** $0.02–0.05 (was ~$2/day).
 - `src/lib/admin-alerts.ts`: `isTransientError()` filter skips email + DB
   alerts for fetch-failed / timeout / 5xx / ECONN* / aborted errors.
   `alertScraperFailed` and `alertCronFailed` short-circuit when the error

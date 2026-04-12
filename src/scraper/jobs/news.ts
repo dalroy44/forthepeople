@@ -11,6 +11,21 @@
 import * as cheerio from "cheerio";
 import { prisma } from "@/lib/db";
 import { classifyArticleWithAI, executeNewsAction } from "@/lib/news-action-engine";
+
+// Keyword-matcher categories that still benefit from AI-driven data extraction
+// (because we act on them downstream — create Infrastructure projects, alerts,
+// exam records, etc.). Purely informational categories skip the AI round-trip.
+const ACTIONABLE_MODULES = [
+  "infrastructure",
+  "alerts",
+  "exams",
+  "staffing",
+  "leaders",
+  "police",
+  "health",
+  "power",
+  "schemes",
+];
 import { JobContext, ScraperResult } from "../types";
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
@@ -208,17 +223,29 @@ export async function scrapeNews(ctx: JobContext): Promise<ScraperResult> {
           continue;
         }
         seenUrls.add(item.url);
-        // AI classification with data extraction (async, non-blocking)
-        const aiClassification = await classifyArticleWithAI(
-          item.headline,
-          item.source,
-          ctx.districtName,
-          item.publishedAt
-        ).catch(() => null);
 
-        const targetMod = aiClassification?.targetModule ?? classifyModule(item.headline);
+        // April 13, 2026 — cost optimisation: keyword-first, AI only when
+        // keyword matcher gives us nothing useful OR when the article falls
+        // into an actionable module (infrastructure/alerts/exams/etc.) where
+        // we want structured data extraction from the AI.
+        const keywordModule = classifyModule(item.headline);
+        const needsAI =
+          !keywordModule ||
+          keywordModule === "news" ||
+          ACTIONABLE_MODULES.includes(keywordModule);
+
+        const aiClassification = needsAI
+          ? await classifyArticleWithAI(
+              item.headline,
+              item.source,
+              ctx.districtName,
+              item.publishedAt
+            ).catch(() => null)
+          : null;
+
+        const targetMod = aiClassification?.targetModule ?? keywordModule ?? "news";
         const modAction = aiClassification?.moduleAction ?? "";
-        const classifiedBy = aiClassification?.provider ?? "rule";
+        const classifiedBy = aiClassification?.provider ?? "keyword";
 
         const saved = await prisma.newsItem.create({
           data: {

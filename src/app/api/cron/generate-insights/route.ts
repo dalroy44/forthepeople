@@ -15,7 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/db";
 import { MODULE_INSIGHT_CONFIGS } from "@/lib/insight-config";
-import { generateInsight } from "@/lib/insight-generator";
+import { generateInsight, hasDataChanged } from "@/lib/insight-generator";
 import { alertCronFailed } from "@/lib/admin-alerts";
 
 export const runtime = "nodejs";
@@ -55,6 +55,16 @@ export async function POST(req: NextRequest) {
 
         if (existing && existing.expiresAt > now) {
           // Still fresh — skip
+          continue;
+        }
+
+        // April 13, 2026 — skip regeneration if underlying data hasn't changed
+        // since the last insight. Static modules (leaders, budget, schools)
+        // rarely change and were burning Gemini Pro calls on every run.
+        if (!(await hasDataChanged(district.id, config.module))) {
+          console.log(
+            `[generate-insights] Skip ${config.module}/${district.slug} — no data change`
+          );
           continue;
         }
 

@@ -28,15 +28,18 @@ export interface AIResponse {
 // ── Tiered model routing ────────────────────────────────────
 function getModelForPurpose(purpose: string): string {
   switch (purpose) {
-    // TIER 1 — Free (₹0) — internal admin tasks only
+    // TIER 1 — Free (₹0)
+    // Includes news-analysis (April 13, 2026 cost cut). Classification is
+    // basically pick-a-category-from-list and extract-a-few-fields — the free
+    // tier handles it fine and the fallback chain catches rate-limit misses.
     case "classify":
     case "summarize":
     case "format":
+    case "news-analysis":
       return "openai/gpt-oss-20b:free";
 
-    // TIER 2 — Affordable at scale — user-facing content
+    // TIER 2 — Affordable at scale — user-facing citizen-impact content
     case "insight":
-    case "news-analysis":
     case "document":
     case "document-large":
       return "google/gemini-2.5-pro";
