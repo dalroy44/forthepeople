@@ -7,11 +7,17 @@ interface AnalyticsData {
   topVotedFeatures: Array<{ title: string; votes: number; status: string }>;
   feedbackTrend: Array<{ week: string; count: number }>;
   revenueTrend: Array<{ week: string; amount: number }>;
+  feedbackByType: Array<{ type: string; count: number }>;
   totals: {
     totalFeedback: number;
+    feedbackThisWeek: number;
     totalContributions: number;
+    contributionsThisWeek: number;
     totalRevenue: number;
     totalFeatureVotes: number;
+    featureVotesThisWeek: number;
+    totalDistrictRequests: number;
+    districtRequestsThisWeek: number;
   };
 }
 
@@ -206,22 +212,114 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* Section D: Totals */}
+      {/* Section D: Engagement metrics (totals + 7d delta) */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
         {[
-          { label: "Total Feedback", value: String(data.totals.totalFeedback), color: "#D97706" },
-          { label: "Total Contributions", value: String(data.totals.totalContributions), color: "#2563EB" },
-          { label: "Total Revenue", value: formatINR(data.totals.totalRevenue), color: "#16A34A" },
-          { label: "Total Feature Votes", value: data.totals.totalFeatureVotes.toLocaleString("en-IN"), color: "#7C3AED" },
+          {
+            label: "Total Feedback",
+            value: String(data.totals.totalFeedback),
+            sub: `${data.totals.feedbackThisWeek} this week`,
+            color: "#D97706",
+          },
+          {
+            label: "Total Contributions",
+            value: String(data.totals.totalContributions),
+            sub: `${data.totals.contributionsThisWeek} this week`,
+            color: "#2563EB",
+          },
+          {
+            label: "Total Feature Votes",
+            value: data.totals.totalFeatureVotes.toLocaleString("en-IN"),
+            sub: `+${data.totals.featureVotesThisWeek} this week`,
+            color: "#7C3AED",
+          },
+          {
+            label: "District Requests",
+            value: data.totals.totalDistrictRequests.toLocaleString("en-IN"),
+            sub: `${data.totals.districtRequestsThisWeek} updated this week`,
+            color: "#16A34A",
+          },
         ].map((s) => (
           <div key={s.label} style={card}>
-            <div style={{ fontSize: 11, color: "#9B9B9B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
+            <div
+              style={{
+                fontSize: 11,
+                color: "#9B9B9B",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                marginBottom: 4,
+              }}
+            >
               {s.label}
             </div>
             <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: "#6B6B6B", marginTop: 4 }}>{s.sub}</div>
           </div>
         ))}
       </div>
+
+      {/* Feedback breakdown by type */}
+      {data.feedbackByType && data.feedbackByType.length > 0 && (
+        <div style={card}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A", marginBottom: 12 }}>
+            Feedback by Type
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {(() => {
+              const max = Math.max(...data.feedbackByType.map((f) => f.count), 1);
+              return data.feedbackByType
+                .slice()
+                .sort((a, b) => b.count - a.count)
+                .map((f) => (
+                  <div key={f.type} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div
+                      style={{
+                        width: 120,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: "#1A1A1A",
+                        flexShrink: 0,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {f.type.replace(/_/g, " ")}
+                    </div>
+                    <div
+                      style={{
+                        flex: 1,
+                        height: 20,
+                        background: "#F3F4F6",
+                        borderRadius: 4,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${(f.count / max) * 100}%`,
+                          height: "100%",
+                          background: "rgba(217, 119, 6, 0.3)",
+                          minWidth: 2,
+                        }}
+                      />
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#D97706",
+                        minWidth: 40,
+                        textAlign: "right",
+                      }}
+                    >
+                      {f.count}
+                    </span>
+                  </div>
+                ));
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Section E: External Analytics Link */}
       <div style={card}>

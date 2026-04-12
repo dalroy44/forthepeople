@@ -50,8 +50,14 @@ docs/GEO-AUDIT-REPORT.md           ← SEO/GEO audit results
 
 ## Current State (April 13, 2026)
 - 10 live districts, 7 states
-- Admin: unified left sidebar (11 tabs grouped: Overview, Operations, AI & Data, Finance,
-  Analytics, Security, Community). URL `?tab=` routing for in-page sub-tabs.
+- Admin: unified left sidebar (12 tabs grouped: Overview, Operations, AI & Data, Finance,
+  Analytics [Analytics + Traffic], Security, Community). URL `?tab=` routing for in-page sub-tabs.
+- Sentry errors pulled directly into Alerts & Logs via REST API (SENTRY_API_TOKEN).
+- Plausible Stats API powers the Traffic tab (live visitors, pages, referrers, devices, countries).
+- AI Platform Report: weekly Gemini 2.5 Pro analysis with action items + cost tips
+  (Sundays midnight UTC cron + manual dashboard trigger). ~$0.002 per report.
+- Analytics tab: week-over-week deltas on totals + feedback-by-type breakdown.
+- Graceful degradation: all external-API tabs show setup instructions when keys missing.
 - Admin dashboard: Action Required banner, Platform Health cards, Revenue + OpenRouter
   live credit tracking, filterable Recent Activity feed.
 - System Health: per-district "Run Now" scraper trigger, expandable error details,

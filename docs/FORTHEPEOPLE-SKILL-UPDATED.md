@@ -20,8 +20,8 @@ ALL STATES:       36 states/UTs browsable (locked ones show preview + sponsor CT
 ALL DISTRICTS:    152 districts in DB (locked ones show LockedDistrictPreview)
 STATE MAPS:       33 GeoJSON maps from DataMeet Census 2011 + Karnataka hand-tuned
 PROJECT ID:       FTP-JMB-2026-IN (watermark ID)
-LAST UPDATED:     April 13, 2026 (finance system: expenditure tracking, manual supporters,
-                  service subscriptions with expiry countdowns, combined finance-summary endpoint)
+LAST UPDATED:     April 13, 2026 (intelligence: Sentry errors in Alerts, Plausible Traffic tab,
+                  AI weekly platform report with cost tips, Analytics week-over-week deltas)
 ```
 
 ---
@@ -323,9 +323,19 @@ src/app/[locale]/admin/AlertsAndLogs.tsx         — Filters (level/source/date/
 src/app/[locale]/admin/CostsTab.tsx              — OpenRouter real spend, per-model est. cost,
                                                    monthly/yearly totals, service renewal countdowns
 src/app/[locale]/admin/ExpenditureTab.tsx        — Expense tracking, P&L view, CSV export (in-page tab)
+src/app/[locale]/admin/TrafficTab.tsx            — Plausible traffic (in-page tab)
 src/app/[locale]/admin/supporters/SupportersSection.tsx — Revenue+supporters client wrapper
 src/app/[locale]/admin/supporters/RevenueSummary.tsx    — Revenue cards + monthly chart
 src/app/[locale]/admin/supporters/ManualSupporterForm.tsx — Offline supporter modal
+src/components/admin/SentryErrorsSection.tsx     — Unresolved Sentry issues (rendered in Alerts tab)
+src/components/admin/PlatformReportCard.tsx     — AI weekly analysis card (rendered in Dashboard)
+src/lib/sentry-api.ts                            — Sentry REST client (unresolved issues)
+src/lib/plausible-api.ts                         — Plausible Stats API client
+src/lib/platform-analysis.ts                     — AI weekly report generator
+src/app/api/admin/sentry-errors/route.ts         — Sentry unresolved (5min Redis cache)
+src/app/api/admin/traffic/route.ts               — Plausible traffic (3min Redis cache)
+src/app/api/admin/platform-report/route.ts       — AI report GET + POST?confirm=true
+src/app/api/cron/platform-report/route.ts        — Weekly cron (Sun 00:00 UTC)
 ```
 
 ### Scraper

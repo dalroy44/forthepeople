@@ -19,6 +19,7 @@ import {
   Bot,
   RefreshCw,
 } from "lucide-react";
+import PlatformReportCard from "@/components/admin/PlatformReportCard";
 
 interface OpenRouterUsage {
   spent: number;
@@ -444,6 +445,9 @@ export default function DashboardView({ locale }: { locale: string }) {
           </div>
         </Link>
       </div>
+
+      {/* AI Platform Analysis */}
+      <PlatformReportCard />
 
       {/* Section D: Recent Activity */}
       <div

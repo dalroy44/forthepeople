@@ -25,6 +25,7 @@ import {
   ArrowLeft,
   LogOut,
   TrendingDown,
+  Globe,
 } from "lucide-react";
 import ModuleHelp from "./ModuleHelp";
 import { logoutAction } from "@/app/[locale]/admin/actions";
@@ -39,6 +40,7 @@ type ItemId =
   | "expenditure"
   | "costs"
   | "analytics"
+  | "traffic"
   | "security"
   | "feedback";
 
@@ -161,6 +163,14 @@ const GROUPS: Group[] = [
         buildHref: (locale) => `/${locale}/admin?tab=analytics`,
         inPageTab: true,
         help: "District requests, feature votes, and engagement trends",
+      },
+      {
+        id: "traffic",
+        label: "Traffic",
+        icon: Globe,
+        buildHref: (locale) => `/${locale}/admin?tab=traffic`,
+        inPageTab: true,
+        help: "Live visitors, top pages, referrers, and device breakdown (Plausible)",
       },
     ],
   },
@@ -500,6 +510,7 @@ function resolveActiveItem(
   if (tab === "analytics") return "analytics";
   if (tab === "costs") return "costs";
   if (tab === "expenditure") return "expenditure";
+  if (tab === "traffic") return "traffic";
   return "dashboard";
 }
 

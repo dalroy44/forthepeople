@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { AlertTriangle, Download, Mail, X } from "lucide-react";
 import ModuleHelp from "@/components/admin/ModuleHelp";
+import SentryErrorsSection from "@/components/admin/SentryErrorsSection";
 
 interface AdminAlertItem {
   id: string;
@@ -206,6 +207,9 @@ export default function AlertsAndLogs() {
         </h2>
         <ModuleHelp text={ALERTS_HELP} size={14} />
       </div>
+
+      {/* Sentry production errors (separate from internal AdminAlert feed) */}
+      <SentryErrorsSection />
 
       {/* Email config warning */}
       {!emailConfigured && (

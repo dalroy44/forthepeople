@@ -1975,3 +1975,39 @@ prisma/seed-features.ts                         — 23 feature requests seed
 prisma.config.ts                                — Prisma 7 config (DATABASE_URL from env)
 Dockerfile.scraper                              — Railway scraper container
 ```
+
+---
+
+## 29. EXTERNAL INTEGRATIONS (April 2026)
+
+### Sentry Error API
+Reads unresolved issues and surfaces them inside Alerts & Logs tab + Dashboard banner.
+- `src/lib/sentry-api.ts` — REST client (sentry.io/api/0)
+- `src/app/api/admin/sentry-errors/route.ts` — cookie-auth endpoint, 5min Redis cache
+- `src/components/admin/SentryErrorsSection.tsx` — rendered at top of Alerts & Logs
+- Env: `SENTRY_API_TOKEN` (not SENTRY_AUTH_TOKEN — that's build-time), `SENTRY_ORG`,
+  `SENTRY_PROJECT`. Token requires `event:read` + `project:read` scopes.
+- Graceful: shows setup instructions when unconfigured.
+
+### Plausible Stats API
+Powers the Traffic tab with real-time visitors, top pages, referrers, devices, countries.
+- `src/lib/plausible-api.ts` — `fetchAllPlausibleData(period)` returns all blocks in one go
+- `src/app/api/admin/traffic/route.ts` — cookie-auth, 3min cache, supports 7d/30d/90d/month/year
+- `src/app/[locale]/admin/TrafficTab.tsx` — in-page tab (`?tab=traffic`)
+- Env: `PLAUSIBLE_API_KEY`, `PLAUSIBLE_SITE_ID` (default: forthepeople.in)
+- Graceful: setup instructions when unconfigured.
+- "View Full Analytics" button links to plausible.io dashboard.
+
+### AI Platform Analysis
+Weekly AI-generated platform health report with action items + cost tips.
+- Model: `PlatformReport` (type, summary, actionItems, metrics, costTips, growthNotes,
+  aiModel, aiProvider, aiCostUSD, generatedAt)
+- `src/lib/platform-analysis.ts` — gathers 7-day snapshot + calls Gemini 2.5 Pro via callAIJSON
+- `src/app/api/admin/platform-report/route.ts` — GET latest + estimate, POST with
+  `?confirm=true` to generate
+- `src/app/api/cron/platform-report/route.ts` — Sundays 00:00 UTC via vercel.json
+- `src/components/admin/PlatformReportCard.tsx` — Dashboard card with two-step generate flow
+- Approx cost: $0.002 (~₹0.20) per report. Cheaper than the prompt's ~$0.01 estimate because
+  the actual prompt fits in ~1.7K tokens.
+- Weekly cron needs `CRON_SECRET` set; manual trigger from Dashboard works independently.
+```

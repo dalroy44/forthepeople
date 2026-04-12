@@ -98,22 +98,64 @@ export async function GET() {
     result.revenueTrend = [];
   }
 
-  // ── Totals ─────────────────────────────────────────
+  // ── Totals (with 7d deltas) ────────────────────────
   try {
-    const [totalFeedback, totalContributions, allRevenue, totalFeatureVotes] = await Promise.all([
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000);
+    const [
+      totalFeedback,
+      feedbackThisWeek,
+      totalContributions,
+      contributionsThisWeek,
+      allRevenue,
+      totalFeatureVotes,
+      featureVotesThisWeek,
+      totalDistrictRequests,
+      districtRequestsThisWeek,
+    ] = await Promise.all([
       prisma.feedback.count(),
+      prisma.feedback.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
       prisma.supporter.count({ where: { status: "success" } }),
+      prisma.supporter.count({ where: { status: "success", createdAt: { gte: sevenDaysAgo } } }),
       prisma.supporter.findMany({ where: { status: "success" }, select: { amount: true } }),
       prisma.featureRequest.aggregate({ _sum: { votes: true } }),
+      prisma.featureVote.count({ where: { votedAt: { gte: sevenDaysAgo } } }),
+      prisma.districtRequest.aggregate({ _sum: { requestCount: true } }),
+      prisma.districtRequest.count({ where: { updatedAt: { gte: sevenDaysAgo } } }),
     ]);
     result.totals = {
       totalFeedback,
+      feedbackThisWeek,
       totalContributions,
+      contributionsThisWeek,
       totalRevenue: allRevenue.reduce((s, x) => s + x.amount, 0),
       totalFeatureVotes: totalFeatureVotes._sum.votes ?? 0,
+      featureVotesThisWeek,
+      totalDistrictRequests: totalDistrictRequests._sum.requestCount ?? 0,
+      districtRequestsThisWeek,
     };
   } catch {
-    result.totals = { totalFeedback: 0, totalContributions: 0, totalRevenue: 0, totalFeatureVotes: 0 };
+    result.totals = {
+      totalFeedback: 0,
+      feedbackThisWeek: 0,
+      totalContributions: 0,
+      contributionsThisWeek: 0,
+      totalRevenue: 0,
+      totalFeatureVotes: 0,
+      featureVotesThisWeek: 0,
+      totalDistrictRequests: 0,
+      districtRequestsThisWeek: 0,
+    };
+  }
+
+  // ── Feedback by type (for breakdown) ──────────────
+  try {
+    const grouped = await prisma.feedback.groupBy({
+      by: ["type"],
+      _count: { _all: true },
+    });
+    result.feedbackByType = grouped.map((g) => ({ type: g.type, count: g._count._all }));
+  } catch {
+    result.feedbackByType = [];
   }
 
   return NextResponse.json(result);

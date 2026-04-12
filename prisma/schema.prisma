@@ -1518,6 +1518,22 @@ model Subscription {
   @@index([category])
 }
 
+model PlatformReport {
+  id           String   @id @default(cuid())
+  type         String   @default("weekly")    // "weekly" | "manual"
+  summary      String   @db.Text              // Plain-English health summary
+  actionItems  Json                            // [{ priority, title, description }]
+  metrics      Json                            // Snapshot of key metrics at generation time
+  costTips     Json?                           // [{ tip, estimatedSaving, priority }]
+  growthNotes  String?  @db.Text              // Free-form growth insights
+  aiModel      String                          // Model used to generate
+  aiProvider   String?                         // Provider used
+  aiCostUSD    Float    @default(0)           // Approx generation cost
+  generatedAt  DateTime @default(now())
+
+  @@index([type, generatedAt])
+}
+
 model Expense {
   id               String    @id @default(cuid())
   date             DateTime
