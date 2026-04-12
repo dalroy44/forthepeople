@@ -6,7 +6,6 @@
 
 // ═══════════════════════════════════════════════════════════
 // Insight Generator — uses callAI (OpenRouter tiered routing)
-// Key resolution: DB adminAPIKey → env var fallback
 // ═══════════════════════════════════════════════════════════
 import { prisma } from "@/lib/db";
 import { callAI } from "@/lib/ai-provider";

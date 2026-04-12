@@ -8,7 +8,7 @@
 // ForThePeople.in — Fact Checker
 // Verifies each module's data for a given district
 // ═══════════════════════════════════════════════════════════
-import Anthropic from "@anthropic-ai/sdk";
+import { callAI } from "@/lib/ai-provider";
 import { prisma } from "@/lib/db";
 
 export type CheckResult = {
@@ -30,20 +30,20 @@ type DistrictWithState = {
   state: { name: string };
 };
 
-// ── Opus AI caller ─────────────────────────────────────────
+// ── AI caller (routed through OpenRouter) ──────────────────
 async function callOpus(prompt: string): Promise<string> {
-  const baseURL = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return '{"error":"No API key"}';
-
-  const client = new Anthropic({ apiKey, baseURL });
-  const msg = await client.messages.create({
-    model: "claude-opus-4-20250514",
-    max_tokens: 2048,
-    messages: [{ role: "user", content: prompt }],
-  });
-  const block = msg.content[0];
-  return block.type === "text" ? block.text : "";
+  try {
+    const res = await callAI({
+      systemPrompt: "You are a fact-checker. Respond with valid JSON only.",
+      userPrompt: prompt,
+      purpose: "fact-check",
+      jsonMode: true,
+      maxTokens: 2048,
+    });
+    return res.text;
+  } catch (err) {
+    return JSON.stringify({ error: err instanceof Error ? err.message : String(err) });
+  }
 }
 
 function parseJSON<T>(text: string): T | null {

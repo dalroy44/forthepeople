@@ -37,8 +37,7 @@ export async function GET() {
   }
 
   // Keys (status only, never values)
-  checks.geminiKey = process.env.GEMINI_API_KEY ? "✅ Set" : "❌ Missing";
-  checks.anthropicKey = process.env.ANTHROPIC_API_KEY ? "✅ Set" : "⚠️ Using DB key or not set";
+  checks.openrouterKey = process.env.OPENROUTER_API_KEY ? "✅ Set" : "❌ Missing";
   checks.encryptionSecret = process.env.ENCRYPTION_SECRET ? "✅ Set" : "⚠️ Using fallback";
   checks.resendKey = process.env.RESEND_API_KEY ? "✅ Set" : "⚠️ Not set";
 
