@@ -81,3 +81,46 @@ export function detectAndCleanSocialLink(rawInput: string): SocialDetectResult |
     return null;
   }
 }
+
+export interface SocialValidation {
+  valid: boolean;
+  platform: string | null;
+  cleanUrl: string | null;
+  warning?: string;
+}
+
+/**
+ * Validate that a social link is well-formed.
+ * - Empty input → valid (the field is optional).
+ * - Detected → valid + platform + cleaned URL.
+ * - URL-ish but undetected → valid + warning.
+ * - Looks like an Instagram-style handle → valid + warning.
+ * - Otherwise → invalid.
+ */
+export function validateSocialLink(input: string): SocialValidation {
+  if (!input || !input.trim()) {
+    return { valid: true, platform: null, cleanUrl: null };
+  }
+  const trimmed = input.trim();
+  const detected = detectAndCleanSocialLink(trimmed);
+  if (detected) {
+    return { valid: true, platform: detected.platform, cleanUrl: detected.cleanUrl };
+  }
+  if (trimmed.startsWith("@")) {
+    return {
+      valid: true,
+      platform: "instagram",
+      cleanUrl: `https://instagram.com/${trimmed.slice(1)}`,
+      warning: "Assumed Instagram handle — correct?",
+    };
+  }
+  if (trimmed.includes(".") || trimmed.startsWith("http")) {
+    return {
+      valid: true,
+      platform: "website",
+      cleanUrl: trimmed.startsWith("http") ? trimmed : `https://${trimmed}`,
+      warning: "Could not verify — please double-check the link",
+    };
+  }
+  return { valid: false, platform: null, cleanUrl: null, warning: "Invalid link format" };
+}

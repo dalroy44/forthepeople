@@ -1386,6 +1386,26 @@ export function getActiveDistricts(stateSlug: string): District[] {
   return getState(stateSlug)?.districts.filter((d) => d.active) ?? [];
 }
 
+/**
+ * Total count of active districts across all states.
+ * Use this instead of hardcoding "9 active districts" anywhere in the UI —
+ * the number changes as new districts go live.
+ */
+export function getTotalActiveDistrictCount(): number {
+  return INDIA_STATES.reduce(
+    (sum, s) => sum + s.districts.filter((d) => d.active).length,
+    0,
+  );
+}
+
+/**
+ * Count of states with at least one active district.
+ * For support-page copy ("across N states").
+ */
+export function getActiveStateCount(): number {
+  return INDIA_STATES.filter((s) => s.districts.some((d) => d.active)).length;
+}
+
 // Pilot district constants
 export const PILOT_STATE = "karnataka";
 export const PILOT_DISTRICT = "mandya";

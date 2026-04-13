@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/db";
 import { cacheSet } from "@/lib/cache";
+import { calculateOneTimeExpiry } from "@/lib/contribution-expiry";
 
 // All cache keys used by /api/data/contributors — must invalidate ALL on payment
 const CONTRIBUTOR_CACHE_KEYS = [
@@ -15,6 +16,7 @@ const CONTRIBUTOR_CACHE_KEYS = [
   "ftp:contributors:all",
   "ftp:contributors:leaderboard",
   "ftp:contributors:district-rankings",
+  "ftp:contributors:top-tier",
 ];
 
 export async function POST(req: NextRequest) {
@@ -71,19 +73,24 @@ export async function POST(req: NextRequest) {
 
     // Also save to Supporter table (for admin /supporters view)
     try {
+      const amountRupees = contribution.amount / 100; // paise → rupees
+      const expiresAt = calculateOneTimeExpiry(amountRupees);
       await prisma.supporter.upsert({
         where: { paymentId: razorpay_payment_id },
-        update: { status: "success" },
+        update: { status: "success", expiresAt },
         create: {
           name: contribution.name,
           email: contribution.email ?? null,
-          amount: contribution.amount / 100, // paise → rupees
+          amount: amountRupees,
           currency: contribution.currency,
           tier: contribution.tier ?? "one-time",
           paymentId: razorpay_payment_id,
           orderId: razorpay_order_id,
           status: "success",
           message: contribution.message ?? null,
+          isRecurring: false,
+          expiresAt,
+          isPublic: contribution.isPublic,
         },
       });
     } catch (supporterErr) {

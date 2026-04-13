@@ -9,8 +9,8 @@
 [Live Site](https://forthepeople.in) · [Watch the Platform Walkthrough](https://www.instagram.com/reel/DW0UIkWvmxq/) · [Vote for Features](https://forthepeople.in/en/features) · [Support the Project](https://forthepeople.in/support)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Districts](https://img.shields.io/badge/districts_live-10-green.svg)
-![Modules](https://img.shields.io/badge/dashboards-30_per_district-orange.svg)
+![Districts](https://img.shields.io/badge/districts_live-9-green.svg)
+![Modules](https://img.shields.io/badge/dashboards-29_per_district-orange.svg)
 
 </div>
 
@@ -77,7 +77,7 @@ prompts/                    # Claude Code prompts archive (completed + pending)
 src/
 ├── app/                    # Next.js App Router pages + API routes
 │   ├── api/
-│   │   ├── data/[module]/  # 30-module unified data API
+│   │   ├── data/[module]/  # 29-module unified data API
 │   │   ├── cron/           # Scheduled jobs (news, crops, insights)
 │   │   └── admin/          # Admin endpoints (health, alerts, analytics)
 │   └── [locale]/[state]/[district]/  # District dashboard pages
@@ -97,8 +97,13 @@ ForThePeople.in is an **independent citizen transparency initiative**. It is NOT
 
 Running this platform for all 780+ districts costs approximately ₹12 lakh/year. You can help:
 
-- **₹1.50/day** serves one district
-- [Support page →](https://forthepeople.in/support)
+- **One-Time Contribution** — any amount from ₹10
+- **District Champion** — ₹99/mo, name on your chosen district page
+- **State Champion** — ₹1,999/mo, name on every district in that state
+- **All-India Patron** — ₹9,999/mo, featured on every district page
+- **Founding Builder** — ₹50,000/mo, permanent homepage spotlight
+
+[Support page →](https://forthepeople.in/support) · [Contributor leaderboard →](https://forthepeople.in/en/contributors)
 
 ## Contributing
 
@@ -109,7 +114,7 @@ We welcome contributions from developers of all skill levels! Whether you want t
 - Review our [Code of Conduct](CODE_OF_CONDUCT.md)
 - Report security issues privately via [SECURITY.md](SECURITY.md)
 
-**Goal:** Cover all 780+ districts across India. Currently at 10 — help us get there!
+**Goal:** Cover all 780+ districts across India. Currently at 9 — help us get there!
 
 ## Creator
 

@@ -17,6 +17,7 @@ const CONTRIBUTOR_CACHE_KEYS = [
   "ftp:contributors:all",
   "ftp:contributors:leaderboard",
   "ftp:contributors:district-rankings",
+  "ftp:contributors:top-tier",
 ];
 
 export async function POST(req: NextRequest) {
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
       name,
       email,
       tier,
+      amount: requestAmount,
       districtId,
       stateId,
       socialLink,
@@ -41,6 +43,7 @@ export async function POST(req: NextRequest) {
       name: string;
       email?: string;
       tier: string;
+      amount?: number;
       districtId?: string;
       stateId?: string;
       socialLink?: string;
@@ -80,7 +83,9 @@ export async function POST(req: NextRequest) {
     // Get badge type from tier config
     const tierConfig = TIER_CONFIG[tier];
     const badgeType = tierConfig?.badgeType ?? null;
-    const amount = tierConfig?.amount ?? 0;
+    const amount = Number.isFinite(requestAmount) && (requestAmount ?? 0) > 0
+      ? Number(requestAmount)
+      : tierConfig?.amount ?? 0;
 
     // Create or update Supporter record (upsert to handle webhook race condition)
     await prisma.supporter.upsert({
@@ -88,12 +93,13 @@ export async function POST(req: NextRequest) {
       update: {
         name: name.trim(),
         email: email?.trim() || null,
+        amount,
         tier,
         razorpaySubscriptionId: razorpay_subscription_id,
         isRecurring: true,
         subscriptionStatus: "active",
         activatedAt: new Date(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        expiresAt: null,
         districtId: districtId || null,
         stateId: stateId || null,
         socialLink: socialLink?.trim() || null,
@@ -113,7 +119,7 @@ export async function POST(req: NextRequest) {
         isRecurring: true,
         subscriptionStatus: "active",
         activatedAt: new Date(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        expiresAt: null,
         districtId: districtId || null,
         stateId: stateId || null,
         socialLink: socialLink?.trim() || null,

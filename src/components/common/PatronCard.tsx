@@ -8,6 +8,7 @@
 
 import { Instagram, Linkedin, Github, Twitter, ExternalLink } from "lucide-react";
 import { BADGE_COLORS } from "@/lib/badge-level";
+import { getContributorLabel } from "@/lib/contributor-label";
 
 interface Patron {
   id: string;
@@ -18,6 +19,8 @@ interface Patron {
   socialPlatform: string | null;
   monthsActive: number;
   message: string | null;
+  districtName?: string | null;
+  stateName?: string | null;
 }
 
 const SOCIAL_ICONS: Record<string, typeof Instagram> = {
@@ -82,7 +85,7 @@ export default function PatronCard({ patron }: { patron: Patron }) {
           </div>
           <div style={{ fontSize: 12, color: "#92400E", marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <span>
-              {isFounder ? "Founding Builder" : "All-India Patron"} · {patron.monthsActive} month{patron.monthsActive !== 1 ? "s" : ""}
+              {getContributorLabel(patron.tier ?? "patron", patron.districtName, patron.stateName)} · {patron.monthsActive} month{patron.monthsActive !== 1 ? "s" : ""}
             </span>
             {patron.badgeLevel && (
               <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: badgeColors?.bg, color: badgeColors?.text, textTransform: "uppercase", letterSpacing: "0.04em" }}>

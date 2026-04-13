@@ -33,6 +33,7 @@ export default async function ContributorsPage({ params }: Props) {
       districtSlug={district}
       districtName={districtData?.name ?? district}
       stateName={stateData?.name ?? state}
+      population={districtData?.population ?? null}
     />
   );
 }

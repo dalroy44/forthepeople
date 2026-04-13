@@ -9,8 +9,19 @@ import prisma from "@/lib/db";
 import { cacheGet, cacheSet } from "@/lib/cache";
 import { calculateBadgeLevel, getMonthsActive } from "@/lib/badge-level";
 import { TIER_PRIORITY } from "@/lib/constants/razorpay-plans";
+import {
+  isMockEnabled,
+  mockTopTier,
+  mockDistrict,
+  mockStatePage,
+  mockLeaderboard,
+  mockDistrictRankings,
+  mockAll,
+  mockGrowthTrend,
+} from "@/lib/mock-contributors";
 
 const CACHE_TTL = 120; // 2 minutes
+const HARD_MAX = 500; // absolute ceiling per page
 
 // Public-safe fields only — never expose email, phone, paymentId, razorpayData
 interface PublicContributor {
@@ -24,8 +35,13 @@ interface PublicContributor {
   socialPlatform: string | null;
   districtId: string | null;
   stateId: string | null;
+  districtName: string | null;
+  stateName: string | null;
+  districtSlug: string | null;
+  stateSlug: string | null;
   activatedAt: string | null;
   expiresAt: string | null;
+  isRecurring: boolean;
   monthsActive: number;
   message: string | null;
   createdAt: string;
@@ -48,8 +64,14 @@ function toPublic(s: {
   message: string | null;
   isPublic: boolean;
   createdAt: Date;
+  sponsoredDistrict?: { name: string; slug: string; state?: { name: string; slug: string } | null } | null;
+  sponsoredState?: { name: string; slug: string } | null;
 }): PublicContributor {
   const isAnon = !s.isPublic;
+  const districtName = s.sponsoredDistrict?.name ?? null;
+  const districtSlug = s.sponsoredDistrict?.slug ?? null;
+  const stateName = s.sponsoredState?.name ?? s.sponsoredDistrict?.state?.name ?? null;
+  const stateSlug = s.sponsoredState?.slug ?? s.sponsoredDistrict?.state?.slug ?? null;
   return {
     id: s.id,
     name: isAnon ? "Anonymous" : s.name,
@@ -61,8 +83,13 @@ function toPublic(s: {
     socialPlatform: isAnon ? null : s.socialPlatform,
     districtId: s.districtId,
     stateId: s.stateId,
+    districtName,
+    stateName,
+    districtSlug,
+    stateSlug,
     activatedAt: s.activatedAt?.toISOString() ?? null,
     expiresAt: s.expiresAt?.toISOString() ?? null,
+    isRecurring: s.isRecurring,
     monthsActive: getMonthsActive(s.activatedAt),
     message: isAnon ? null : s.message,
     createdAt: s.createdAt.toISOString(),
@@ -86,7 +113,43 @@ const SELECT_FIELDS = {
   message: true,
   isPublic: true,
   createdAt: true,
+  sponsoredDistrict: {
+    select: {
+      name: true,
+      slug: true,
+      state: { select: { name: true, slug: true } },
+    },
+  },
+  sponsoredState: {
+    select: { name: true, slug: true },
+  },
 } as const;
+
+function notExpired() {
+  return {
+    OR: [
+      { expiresAt: null },
+      { expiresAt: { gt: new Date() } },
+    ],
+  };
+}
+
+function parsePaging(url: URL, defaultLimit: number): { limit: number; offset: number } {
+  const rawLimit = Number(url.searchParams.get("limit"));
+  const rawOffset = Number(url.searchParams.get("offset"));
+  const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, HARD_MAX) : defaultLimit;
+  const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
+  return { limit, offset };
+}
+
+function tierPrioritySort(a: PublicContributor, b: PublicContributor): number {
+  const pa = TIER_PRIORITY[a.tier] ?? 0;
+  const pb = TIER_PRIORITY[b.tier] ?? 0;
+  if (pa !== pb) return pb - pa;
+  // DB already ordered within a tier by amount desc + tenure — preserve that
+  // order by only sorting on priority here (return 0 for same tier).
+  return 0;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -95,93 +158,249 @@ export async function GET(req: NextRequest) {
     const districtSlug = url.searchParams.get("district");
     const stateSlug = url.searchParams.get("state");
 
+    // ── DEV-ONLY mock mode (guarded by env + NODE_ENV) ──
+    if (isMockEnabled()) {
+      if (type === "top-tier") {
+        const { limit, offset } = parsePaging(url, 20);
+        const full = mockTopTier();
+        return NextResponse.json({ contributors: full.slice(offset, offset + limit), total: full.length });
+      }
+      if (type === "state-page" && stateSlug) {
+        const { limit, offset } = parsePaging(url, 60);
+        const full = mockStatePage(stateSlug);
+        return NextResponse.json({ contributors: full.slice(offset, offset + limit), total: full.length });
+      }
+      if (type === "growth-trend") {
+        return NextResponse.json({ points: mockGrowthTrend() });
+      }
+      if (districtSlug || stateSlug) {
+        const { limit, offset } = parsePaging(url, 120);
+        const full = mockDistrict(districtSlug, stateSlug);
+        return NextResponse.json({ contributors: full.slice(offset, offset + limit), total: full.length });
+      }
+      if (type === "leaderboard") {
+        const { limit, offset } = parsePaging(url, 10);
+        const full = mockLeaderboard();
+        return NextResponse.json({ contributors: full.slice(offset, offset + limit), total: full.length });
+      }
+      if (type === "district-rankings") {
+        return NextResponse.json(mockDistrictRankings());
+      }
+      const { limit, offset } = parsePaging(url, 50);
+      const all = mockAll();
+      return NextResponse.json({
+        subscribers: all.subscribers.slice(offset, offset + limit),
+        oneTime: all.oneTime.slice(offset, offset + limit),
+        subscribersTotal: all.subscribers.length,
+        oneTimeTotal: all.oneTime.length,
+      });
+    }
+
+    // ── State page sponsors (founders + patrons + state-tier for this state) ──
+    if (type === "state-page" && stateSlug) {
+      const { limit, offset } = parsePaging(url, 60);
+      const cacheKey = `ftp:contributors:state-page:${stateSlug}`;
+      const cached = await cacheGet<PublicContributor[]>(cacheKey);
+
+      let sortedAll: PublicContributor[];
+      if (cached) {
+        sortedAll = cached;
+      } else {
+        const state = await prisma.state.findFirst({ where: { slug: stateSlug }, select: { id: true } });
+        const stateId = state?.id ?? null;
+        const contributors = await prisma.supporter.findMany({
+          where: {
+            isRecurring: true,
+            subscriptionStatus: "active",
+            status: "success",
+            AND: [notExpired()],
+            OR: [
+              { tier: "founder" },
+              { tier: "patron" },
+              ...(stateId ? [{ tier: "state", stateId }] : []),
+            ],
+          },
+          select: SELECT_FIELDS,
+          orderBy: [{ amount: "desc" }, { activatedAt: "asc" }],
+        });
+        sortedAll = contributors.map(toPublic).sort(tierPrioritySort);
+        await cacheSet(cacheKey, sortedAll, CACHE_TTL);
+      }
+
+      return NextResponse.json({
+        contributors: sortedAll.slice(offset, offset + limit),
+        total: sortedAll.length,
+      });
+    }
+
+    // ── Growth trend — monthly new supporters + cumulative ──
+    if (type === "growth-trend") {
+      const cacheKey = "ftp:contributors:growth-trend";
+      const cached = await cacheGet<Array<{ month: string; newCount: number; cumulative: number }>>(cacheKey);
+      if (cached) return NextResponse.json({ points: cached });
+
+      const LAUNCH = new Date("2026-04-01T00:00:00Z");
+      const rows = await prisma.supporter.findMany({
+        where: { status: "success", createdAt: { gte: LAUNCH } },
+        select: { createdAt: true },
+      });
+      const monthly: Record<string, number> = {};
+      for (const r of rows) {
+        const d = r.createdAt;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        monthly[key] = (monthly[key] ?? 0) + 1;
+      }
+      const sorted = Object.keys(monthly).sort();
+      let cum = 0;
+      const points = sorted.map((month) => {
+        cum += monthly[month];
+        return { month, newCount: monthly[month], cumulative: cum };
+      });
+      await cacheSet(cacheKey, points, CACHE_TTL);
+      return NextResponse.json({ points });
+    }
+
+    // ── Top-tier only (founders + patrons) — for homepage showcase ──
+    if (type === "top-tier") {
+      const { limit, offset } = parsePaging(url, 20);
+      const cacheKey = "ftp:contributors:top-tier";
+      const cached = await cacheGet<PublicContributor[]>(cacheKey);
+      const sortedAll = cached
+        ? cached
+        : (await (async () => {
+            const top = await prisma.supporter.findMany({
+              where: {
+                isRecurring: true,
+                subscriptionStatus: "active",
+                status: "success",
+                tier: { in: ["founder", "patron"] },
+                ...notExpired(),
+              },
+              select: SELECT_FIELDS,
+              orderBy: [{ amount: "desc" }, { activatedAt: "asc" }],
+            });
+            const sorted = top.map(toPublic).sort(tierPrioritySort);
+            await cacheSet(cacheKey, sorted, CACHE_TTL);
+            return sorted;
+          })());
+      return NextResponse.json({
+        contributors: sortedAll.slice(offset, offset + limit),
+        total: sortedAll.length,
+      });
+    }
+
     // ── District page sponsors ──────────────────────────────
     if (districtSlug || stateSlug) {
+      const { limit, offset } = parsePaging(url, 120);
       const cacheKey = `ftp:contributors:district:${districtSlug ?? ""}:${stateSlug ?? ""}`;
       const cached = await cacheGet<PublicContributor[]>(cacheKey);
-      if (cached) return NextResponse.json({ contributors: cached });
 
-      // Resolve district → get its stateId
-      let resolvedStateId: string | null = null;
-      let resolvedDistrictId: string | null = null;
+      let combined: PublicContributor[];
+      if (cached) {
+        combined = cached;
+      } else {
+        let resolvedStateId: string | null = null;
+        let resolvedDistrictId: string | null = null;
 
-      if (districtSlug) {
-        const district = await prisma.district.findFirst({
-          where: { slug: districtSlug },
-          select: { id: true, stateId: true },
-        });
-        if (district) {
-          resolvedDistrictId = district.id;
-          resolvedStateId = district.stateId;
+        if (districtSlug) {
+          const district = await prisma.district.findFirst({
+            where: { slug: districtSlug },
+            select: { id: true, stateId: true },
+          });
+          if (district) {
+            resolvedDistrictId = district.id;
+            resolvedStateId = district.stateId;
+          }
         }
-      }
-      if (stateSlug && !resolvedStateId) {
-        const state = await prisma.state.findFirst({
-          where: { slug: stateSlug },
-          select: { id: true },
+        if (stateSlug && !resolvedStateId) {
+          const state = await prisma.state.findFirst({
+            where: { slug: stateSlug },
+            select: { id: true },
+          });
+          if (state) resolvedStateId = state.id;
+        }
+
+        const sponsors = await prisma.supporter.findMany({
+          where: {
+            isRecurring: true,
+            subscriptionStatus: "active",
+            status: "success",
+            AND: [notExpired()],
+            OR: [
+              { tier: "founder" },
+              { tier: "patron" },
+              ...(resolvedStateId ? [{ tier: "state", stateId: resolvedStateId }] : []),
+              ...(resolvedDistrictId ? [{ tier: "district", districtId: resolvedDistrictId }] : []),
+            ],
+          },
+          select: SELECT_FIELDS,
+          orderBy: [{ amount: "desc" }, { activatedAt: "asc" }],
         });
-        if (state) resolvedStateId = state.id;
+
+        const oneTimeForDistrict = await prisma.supporter.findMany({
+          where: {
+            isRecurring: false,
+            status: "success",
+            AND: [notExpired()],
+            OR: [
+              ...(resolvedDistrictId ? [{ districtId: resolvedDistrictId }] : []),
+              ...(resolvedStateId ? [{ stateId: resolvedStateId, districtId: null }] : []),
+            ],
+          },
+          select: SELECT_FIELDS,
+          orderBy: [{ amount: "desc" }, { createdAt: "desc" }],
+        });
+
+        combined = [...sponsors, ...oneTimeForDistrict]
+          .map(toPublic)
+          .sort(tierPrioritySort);
+
+        await cacheSet(cacheKey, combined, CACHE_TTL);
       }
 
-      // Fetch active sponsors: patrons + state champions + district champions
-      const sponsors = await prisma.supporter.findMany({
-        where: {
-          isRecurring: true,
-          subscriptionStatus: "active",
-          status: "success",
-          OR: [
-            { tier: "patron" }, // All-India Patrons always shown
-            ...(resolvedStateId ? [{ tier: "state", stateId: resolvedStateId }] : []),
-            ...(resolvedDistrictId ? [{ tier: "district", districtId: resolvedDistrictId }] : []),
-          ],
-        },
-        select: SELECT_FIELDS,
-        orderBy: { activatedAt: "asc" }, // longest tenure first
+      return NextResponse.json({
+        contributors: combined.slice(offset, offset + limit),
+        total: combined.length,
       });
-
-      // Sort: patrons → state → district, then by tenure
-      const sorted = sponsors
-        .map(toPublic)
-        .sort((a, b) => {
-          const pa = TIER_PRIORITY[a.tier] ?? 0;
-          const pb = TIER_PRIORITY[b.tier] ?? 0;
-          if (pa !== pb) return pb - pa;
-          return b.monthsActive - a.monthsActive;
-        });
-
-      await cacheSet(cacheKey, sorted, CACHE_TTL);
-      return NextResponse.json({ contributors: sorted });
     }
 
     // ── Leaderboard ─────────────────────────────────────────
     if (type === "leaderboard") {
+      const { limit, offset } = parsePaging(url, 10);
       const cacheKey = "ftp:contributors:leaderboard";
       const cached = await cacheGet<PublicContributor[]>(cacheKey);
-      if (cached) return NextResponse.json({ contributors: cached });
 
-      const leaders = await prisma.supporter.findMany({
-        where: {
-          isRecurring: true,
-          subscriptionStatus: "active",
-          status: "success",
-        },
-        select: SELECT_FIELDS,
-        orderBy: { activatedAt: "asc" }, // longest active first
-        take: 10,
+      const sortedAll = cached
+        ? cached
+        : (await (async () => {
+            const leaders = await prisma.supporter.findMany({
+              where: {
+                isRecurring: true,
+                subscriptionStatus: "active",
+                status: "success",
+                ...notExpired(),
+              },
+              select: SELECT_FIELDS,
+              orderBy: [{ amount: "desc" }, { activatedAt: "asc" }],
+              take: 50, // cache a bit more than default so first pages come from cache
+            });
+            const sorted = leaders
+              .map(toPublic)
+              .sort((a, b) => {
+                if (a.monthsActive !== b.monthsActive) return b.monthsActive - a.monthsActive;
+                const pa = TIER_PRIORITY[a.tier] ?? 0;
+                const pb = TIER_PRIORITY[b.tier] ?? 0;
+                if (pa !== pb) return pb - pa;
+                return (b.amount ?? 0) - (a.amount ?? 0);
+              });
+            await cacheSet(cacheKey, sorted, CACHE_TTL);
+            return sorted;
+          })());
+
+      return NextResponse.json({
+        contributors: sortedAll.slice(offset, offset + limit),
+        total: sortedAll.length,
       });
-
-      const sorted = leaders
-        .map(toPublic)
-        .sort((a, b) => {
-          if (a.monthsActive !== b.monthsActive) return b.monthsActive - a.monthsActive;
-          const pa = TIER_PRIORITY[a.tier] ?? 0;
-          const pb = TIER_PRIORITY[b.tier] ?? 0;
-          if (pa !== pb) return pb - pa;
-          return (b.amount ?? 0) - (a.amount ?? 0);
-        });
-
-      await cacheSet(cacheKey, sorted, CACHE_TTL);
-      return NextResponse.json({ contributors: sorted });
     }
 
     // ── District rankings ─────────────────────────────────
@@ -196,6 +415,7 @@ export async function GET(req: NextRequest) {
           subscriptionStatus: "active",
           status: "success",
           districtId: { not: null },
+          ...notExpired(),
         },
         select: {
           districtId: true,
@@ -208,7 +428,6 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      // Group by district
       const districtMap: Record<string, {
         districtName: string;
         districtSlug: string;
@@ -248,44 +467,52 @@ export async function GET(req: NextRequest) {
     }
 
     // ── All contributors (one-time + subscriptions) ─────────
+    const { limit, offset } = parsePaging(url, 50);
     const cacheKey = "ftp:contributors:all";
     const cached = await cacheGet<{ subscribers: PublicContributor[]; oneTime: PublicContributor[] }>(cacheKey);
-    if (cached) return NextResponse.json(cached);
 
-    const [subscribers, oneTime] = await Promise.all([
-      prisma.supporter.findMany({
-        where: {
-          isRecurring: true,
-          subscriptionStatus: "active",
-          status: "success",
-        },
-        select: SELECT_FIELDS,
-        orderBy: { activatedAt: "asc" },
-      }),
-      prisma.supporter.findMany({
-        where: {
-          isRecurring: false,
-          status: "success",
-        },
-        select: SELECT_FIELDS,
-        orderBy: { amount: "desc" },
-      }),
-    ]);
+    const full = cached
+      ? cached
+      : (await (async () => {
+          const [subscribers, oneTime] = await Promise.all([
+            prisma.supporter.findMany({
+              where: {
+                isRecurring: true,
+                subscriptionStatus: "active",
+                status: "success",
+                ...notExpired(),
+              },
+              select: SELECT_FIELDS,
+              orderBy: [{ amount: "desc" }, { activatedAt: "asc" }],
+            }),
+            prisma.supporter.findMany({
+              where: {
+                isRecurring: false,
+                status: "success",
+                ...notExpired(),
+              },
+              select: SELECT_FIELDS,
+              orderBy: { amount: "desc" },
+            }),
+          ]);
 
-    const result = {
-      subscribers: subscribers.map(toPublic).sort((a, b) => {
-        const pa = TIER_PRIORITY[a.tier] ?? 0;
-        const pb = TIER_PRIORITY[b.tier] ?? 0;
-        if (pa !== pb) return pb - pa;
-        return b.monthsActive - a.monthsActive;
-      }),
-      oneTime: oneTime.map(toPublic),
-    };
+          const result = {
+            subscribers: subscribers.map(toPublic).sort(tierPrioritySort),
+            oneTime: oneTime.map(toPublic),
+          };
 
-    await cacheSet(cacheKey, result, CACHE_TTL);
-    return NextResponse.json(result);
+          await cacheSet(cacheKey, result, CACHE_TTL);
+          return result;
+        })());
+
+    return NextResponse.json({
+      subscribers: full.subscribers.slice(offset, offset + limit),
+      oneTime: full.oneTime.slice(offset, offset + limit),
+      subscribersTotal: full.subscribers.length,
+      oneTimeTotal: full.oneTime.length,
+    });
   } catch (err) {
     console.error("[data/contributors]", err);
-    return NextResponse.json({ contributors: [], subscribers: [], oneTime: [] });
+    return NextResponse.json({ contributors: [], subscribers: [], oneTime: [], total: 0 });
   }
 }

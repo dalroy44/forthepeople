@@ -12,6 +12,8 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { cacheSet } from "@/lib/cache";
 import { logAuditAuto } from "@/lib/audit-log";
+import { calculateOneTimeExpiry } from "@/lib/contribution-expiry";
+import { TIER_CONFIG } from "@/lib/constants/razorpay-plans";
 
 const COOKIE = "ftp_admin_v1";
 
@@ -20,6 +22,7 @@ const CONTRIBUTOR_CACHE_KEYS = [
   "ftp:contributors:all",
   "ftp:contributors:leaderboard",
   "ftp:contributors:district-rankings",
+  "ftp:contributors:top-tier",
 ];
 
 async function invalidateContributorCaches() {
@@ -47,6 +50,22 @@ export async function POST(req: NextRequest) {
   const tier = String(body.tier ?? "custom");
   const createdAt = body.paymentDate ? new Date(body.paymentDate) : new Date();
 
+  // Recurring vs one-time — inferred from tier if not explicitly passed.
+  const tierConfig = TIER_CONFIG[tier];
+  const isRecurring = body.isRecurring !== undefined
+    ? Boolean(body.isRecurring)
+    : Boolean(tierConfig?.isRecurring);
+
+  // Expiry: for one-time, auto-calc if not provided. For recurring, null unless admin overrides.
+  let expiresAt: Date | null = null;
+  if (body.expiresAt) {
+    expiresAt = new Date(body.expiresAt);
+  } else if (!isRecurring) {
+    expiresAt = calculateOneTimeExpiry(amount, createdAt);
+  }
+
+  const badgeType = tierConfig?.badgeType ?? null;
+
   const supporter = await prisma.supporter.create({
     data: {
       name: String(body.name).trim(),
@@ -64,7 +83,13 @@ export async function POST(req: NextRequest) {
       stateId: body.stateId ?? null,
       socialLink: body.socialLink ?? null,
       socialPlatform: body.socialPlatform ?? null,
+      badgeType,
       isPublic: body.isPublic === undefined ? true : Boolean(body.isPublic),
+      isRecurring,
+      subscriptionStatus: isRecurring ? "active" : null,
+      activatedAt: isRecurring ? createdAt : null,
+      expiresAt,
+      paymentId: `manual_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       createdAt,
     },
   });

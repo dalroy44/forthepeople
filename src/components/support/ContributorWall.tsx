@@ -144,15 +144,18 @@ export default function ContributorWall() {
     staleTime: 50_000,
   });
 
-  // Active subscribers (from Supporter model)
-  const { data: subData } = useQuery<{ subscribers: SubscriberItem[] }>({
-    queryKey: ["contributors-all"],
-    queryFn: () => fetch("/api/data/contributors?type=all").then((r) => r.json()),
+  // Active subscribers (from Supporter model) — capped at 30 for the scrolling wall
+  const { data: subData } = useQuery<{ subscribers: SubscriberItem[]; subscribersTotal?: number }>({
+    queryKey: ["contributors-wall-subs"],
+    queryFn: () => fetch("/api/data/contributors?limit=30").then((r) => r.json()),
     staleTime: 120_000,
   });
 
-  const contributors = data?.contributors ?? [];
-  const subscribers = subData?.subscribers ?? [];
+  const allContributors = data?.contributors ?? [];
+  const contributors = allContributors.slice(0, 50); // cap one-time at 50
+  const oneTimeTotal = allContributors.length;
+  const subscribers = (subData?.subscribers ?? []).slice(0, 30);
+  const subscribersTotal = subData?.subscribersTotal ?? subscribers.length;
   const shouldScroll = contributors.length >= 4;
   const shouldScrollSubs = subscribers.length >= 4;
 
@@ -164,7 +167,7 @@ export default function ContributorWall() {
           100% { transform: translateX(-50%); }
         }
         .wall-track {
-          animation: wall-scroll 30s linear infinite;
+          animation: wall-scroll 180s linear infinite;
         }
         .wall-track:hover {
           animation-play-state: paused;
@@ -177,7 +180,11 @@ export default function ContributorWall() {
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", letterSpacing: "-0.3px", margin: 0 }}>
-                🙏 Active Supporters
+                🙏 Active Supporters {subscribersTotal > subscribers.length && (
+                  <span style={{ fontSize: 12, color: "#9B9B9B", fontWeight: 500 }}>
+                    {" "}· {subscribersTotal.toLocaleString("en-IN")} total
+                  </span>
+                )}
               </h2>
               <Link href="/en/contributors" style={{ fontSize: 12, color: "#2563EB", textDecoration: "none", fontWeight: 600 }}>
                 View all →
@@ -199,20 +206,27 @@ export default function ContributorWall() {
         )}
 
         {/* ── One-Time Contributions ── */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", letterSpacing: "-0.3px", margin: 0 }}>
             🎉 {subscribers.length > 0 ? "One-Time Contributions" : "Live Contributions"}
           </h2>
-          {!isLoading && data && data.count > 0 && (
-            <div style={{ fontSize: 12, color: "#6B6B6B" }}>
-              <span style={{ fontWeight: 700, color: "#2563EB", fontFamily: "var(--font-mono, monospace)" }}>
-                ₹{data.totalRupees.toLocaleString("en-IN")}
-              </span>
-              {" "}from{" "}
-              <span style={{ fontWeight: 700, color: "#1A1A1A" }}>{data.count}</span>
-              {" "}supporter{data.count !== 1 ? "s" : ""}
-            </div>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {!isLoading && data && data.count > 0 && (
+              <div style={{ fontSize: 12, color: "#6B6B6B" }}>
+                <span style={{ fontWeight: 700, color: "#2563EB", fontFamily: "var(--font-mono, monospace)" }}>
+                  ₹{data.totalRupees.toLocaleString("en-IN")}
+                </span>
+                {" "}from{" "}
+                <span style={{ fontWeight: 700, color: "#1A1A1A" }}>{data.count}</span>
+                {" "}supporter{data.count !== 1 ? "s" : ""}
+              </div>
+            )}
+            {oneTimeTotal > 50 && (
+              <Link href="/en/contributors?filter=one-time" style={{ fontSize: 12, color: "#2563EB", textDecoration: "none", fontWeight: 600 }}>
+                View all {oneTimeTotal.toLocaleString("en-IN")} →
+              </Link>
+            )}
+          </div>
         </div>
 
         <div style={{ background: "#FAFAF8", border: "1px solid #E8E8E4", borderRadius: 14, padding: "16px", overflow: "hidden", position: "relative" }}>

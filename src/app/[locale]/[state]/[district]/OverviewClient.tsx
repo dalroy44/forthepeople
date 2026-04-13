@@ -25,7 +25,6 @@ import EmptyState from "@/components/district/EmptyState";
 import AIInsightCard from "@/components/common/AIInsightCard";
 import { DistrictHealthScoreCard } from "@/components/district/DistrictHealthScoreCard";
 import DistrictSponsorBanner from "@/components/common/DistrictSponsorBanner";
-import { TIER_CONFIG } from "@/lib/constants/razorpay-plans";
 import { getStateConfig } from "@/lib/constants/state-config";
 import DistrictHeroIllustration from "@/components/district/DistrictHeroIllustration";
 import type { DistrictBadge } from "@/lib/constants/districts";
@@ -180,35 +179,10 @@ export default function OverviewClient({ locale, stateSlug, districtSlug, stateN
         }}
       />
 
-      {/* ── Sponsor CTA (plain subtle bar below hero) ─── */}
-      <div className="sponsor-bar" style={{
-        display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-        padding: "10px 28px",
-        borderBottom: "1px solid #E8E8E4",
-        background: "#FAFAF8",
-      }}>
-        <Link
-          href={`/${locale}/support?tier=district&state=${stateSlug}&district=${districtSlug}`}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 5,
-            padding: "7px 16px",
-            background: "#FFF", color: "#6B6B6B",
-            border: "1px solid #E8E8E4", borderRadius: 10,
-            fontSize: 12, fontWeight: 500, textDecoration: "none", whiteSpace: "nowrap",
-          }}
-        >
-          ❤️ Sponsor {districtData.name} — ₹{TIER_CONFIG.district.amount.toLocaleString("en-IN")}/mo
-        </Link>
-        <Link href={`/${locale}/support?tier=state&state=${stateSlug}`} style={{ fontSize: 11, color: "#999", textDecoration: "none" }}>
-          or: {stateName} ₹{TIER_CONFIG.state.amount.toLocaleString("en-IN")}/mo
-        </Link>
-        <Link href={`/${locale}/support?tier=patron`} style={{ fontSize: 11, color: "#999", textDecoration: "none" }}>
-          · All India ₹{TIER_CONFIG.patron.amount.toLocaleString("en-IN")}/mo
-        </Link>
-      </div>
-
       <div style={{ padding: "20px 24px 24px" }}>
-        <DistrictSponsorBanner district={districtSlug} state={stateSlug} locale={locale} />
+        {/* Combined supporters + sponsor CTA card (cool gray, distinct from AI Analysis) */}
+        <DistrictSponsorBanner district={districtSlug} state={stateSlug} districtName={districtData.name} stateName={stateName} locale={locale} />
+
         <AIInsightCard module="overview" district={districtSlug} />
         <DistrictHealthScoreCard districtSlug={districtSlug} />
 

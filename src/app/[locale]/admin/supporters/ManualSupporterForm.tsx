@@ -22,12 +22,11 @@ interface Props {
 }
 
 const TIERS = [
-  { value: "chai", label: "Chai (₹50)", amount: 50 },
-  { value: "supporter", label: "Supporter (₹499)", amount: 499 },
-  { value: "district", label: "District Champion (₹1,999)", amount: 1999 },
-  { value: "state", label: "State Patron (₹4,999)", amount: 4999 },
-  { value: "patron", label: "Founding Builder (₹50,000)", amount: 50000 },
-  { value: "custom", label: "Custom amount", amount: 0 },
+  { value: "custom",   label: "One-Time Contribution (₹50+)",       amount: 50,    isRecurring: false },
+  { value: "district", label: "District Champion (₹99/mo)",          amount: 99,    isRecurring: true  },
+  { value: "state",    label: "State Champion (₹1,999/mo)",          amount: 1999,  isRecurring: true  },
+  { value: "patron",   label: "All-India Patron (₹9,999/mo)",        amount: 9999,  isRecurring: true  },
+  { value: "founder",  label: "Founding Builder (₹50,000/mo)",       amount: 50000, isRecurring: true  },
 ];
 
 const METHODS = [
@@ -47,11 +46,13 @@ export default function ManualSupporterForm({ districts, states, onCreated }: Pr
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [tier, setTier] = useState("chai");
+  const [tier, setTier] = useState("custom");
   const [amount, setAmount] = useState<number>(50);
+  const [isRecurring, setIsRecurring] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("upi");
   const [referenceNumber, setReferenceNumber] = useState("");
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [expiresAt, setExpiresAt] = useState("");
   const [districtId, setDistrictId] = useState("");
   const [stateId, setStateId] = useState("");
   const [socialLink, setSocialLink] = useState("");
@@ -62,11 +63,13 @@ export default function ManualSupporterForm({ districts, states, onCreated }: Pr
     setName("");
     setEmail("");
     setPhone("");
-    setTier("chai");
+    setTier("custom");
     setAmount(50);
+    setIsRecurring(false);
     setPaymentMethod("upi");
     setReferenceNumber("");
     setPaymentDate(new Date().toISOString().slice(0, 10));
+    setExpiresAt("");
     setDistrictId("");
     setStateId("");
     setSocialLink("");
@@ -78,7 +81,10 @@ export default function ManualSupporterForm({ districts, states, onCreated }: Pr
   const handleTierChange = (v: string) => {
     setTier(v);
     const preset = TIERS.find((t) => t.value === v);
-    if (preset && preset.amount > 0) setAmount(preset.amount);
+    if (preset) {
+      if (preset.amount > 0) setAmount(preset.amount);
+      setIsRecurring(preset.isRecurring);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -99,9 +105,11 @@ export default function ManualSupporterForm({ districts, states, onCreated }: Pr
           phone: phone.trim() || null,
           amount,
           tier,
+          isRecurring,
           paymentMethod,
           referenceNumber: referenceNumber.trim() || null,
           paymentDate: new Date(paymentDate).toISOString(),
+          expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
           districtId: districtId || null,
           stateId: stateId || null,
           socialLink: socialLink.trim() || null,
@@ -245,6 +253,39 @@ export default function ManualSupporterForm({ districts, states, onCreated }: Pr
                   required
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
+                  style={input}
+                />
+              </Field>
+              <Field label="Type" full>
+                <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#1A1A1A" }}>
+                    <input
+                      type="radio"
+                      name="sub-type"
+                      checked={!isRecurring}
+                      onChange={() => setIsRecurring(false)}
+                      style={{ accentColor: "#2563EB" }}
+                    />
+                    One-Time
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#1A1A1A" }}>
+                    <input
+                      type="radio"
+                      name="sub-type"
+                      checked={isRecurring}
+                      onChange={() => setIsRecurring(true)}
+                      style={{ accentColor: "#2563EB" }}
+                    />
+                    Monthly
+                  </label>
+                </div>
+              </Field>
+              <Field label="Expires on (optional)">
+                <input
+                  type="date"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  placeholder={isRecurring ? "Leave blank for ongoing" : "Auto 30/60/90d"}
                   style={input}
                 />
               </Field>

@@ -12,7 +12,7 @@ STATUS:           Sections 1-10 COMPLETE + Contributor system + All states unloc
 LIVE URL:         https://forthepeople.in
 GITHUB:           https://github.com/jayanthmb14/forthepeople (PUBLIC — clean history, MIT with Attribution)
 VERCEL:           zurvoapp Pro (scope: zurvoapps-projects)
-ACTIVE DISTRICTS: 10 across 7 states (Karnataka: Mandya, Mysuru, Bengaluru Urban;
+ACTIVE DISTRICTS: 9 across 7 states (Karnataka: Mandya, Mysuru, Bengaluru Urban;
                   Delhi: New Delhi; Maharashtra: Mumbai;
                   West Bengal: Kolkata; Tamil Nadu: Chennai;
                   Telangana: Hyderabad; Uttar Pradesh: Lucknow)
@@ -20,9 +20,20 @@ ALL STATES:       36 states/UTs browsable (locked ones show preview + sponsor CT
 ALL DISTRICTS:    152 districts in DB (locked ones show LockedDistrictPreview)
 STATE MAPS:       33 GeoJSON maps from DataMeet Census 2011 + Karnataka hand-tuned
 PROJECT ID:       FTP-JMB-2026-IN (watermark ID)
-LAST UPDATED:     April 13, 2026 (power features: Content Editor, Update Log,
-                  AI Admin Bot, Tax Overview + bug fixes: subscription dedup,
-                  credentials encryption, scraper alert suppression, AI cost cut)
+LAST UPDATED:     April 14, 2026 (contributors final polish: combined
+                  Supporters + Sponsor CTA card in cool slate — distinct
+                  from AI Analysis, per-line independent auto-scroll
+                  tickers 120s/90s/60s with overflow detection + pause on
+                  hover, view-all modal opened by clickable count badges,
+                  support wall slowed to 180s, growth chart filtered to
+                  ≥2026-04-01, dynamic getTotalActiveDistrictCount(),
+                  contributors page hero + WHY IT MATTERS + bottom CTA,
+                  homepage ticker 60s/45s mobile CSS loop).
+                  April 13: contributors system COMPLETE — dynamic Razorpay
+                  plans, 5-tier merge, Indian hook lines, state page sponsors,
+                  admin manual CRUD, growth chart, expiry system, amount-sorted,
+                  mobile optimized, paginated + performance. Earlier same day:
+                  Content Editor, Update Log, AI Admin Bot, Tax Overview + fixes.
 ```
 
 ---
@@ -805,3 +816,31 @@ scripts/cleanup-test-contributors.ts   — Removes [TEST] records before deploy
 29. **Mobile-first responsive** — All new components must work at 375px. Use base styles for mobile, `md:` prefix for desktop. Min tap target 44px. Tables must use `data-table-scroll` class for horizontal scroll. Stats use `stats-strip` class for 2x2 mobile layout.
 
 30. **AI insight timing** — Never hardcode "Updated every X hours". `AIInsightCard` uses `formatInsightTiming()` which shows human-readable "X days ago" + "Next refresh in Xh" from `generatedAt`/`expiresAt` fields. The insight API returns both fields.
+
+31. **Razorpay subscriptions use DYNAMIC plans** — `create-subscription` POSTs a fresh Razorpay plan with the user's exact `amount` (from +/- buttons) before creating the subscription. Never reuse the static `RAZORPAY_PLANS` presets — they don't match what the user chose. The `amount` must be passed from `SupportCheckout` through create-subscription → verify-subscription → Supporter.amount. If you see a mismatch between displayed ₹ and charged ₹, check this flow.
+
+32. **Public API nulls subscription amounts** — `toPublic()` in `/api/data/contributors/route.ts` returns `amount: null` for `isRecurring=true` rows. Only one-time contributions expose their amount. UI cards must gate `₹{amount}` on `!c.isRecurring && c.amount`. Never rely on `amount` for sorting subscribers — DB does `orderBy: [{ amount: "desc" }, { activatedAt: "asc" }]` so sort is correct before nulling.
+
+33. **Contributor labels are DYNAMIC** — Never show raw `tier` string or the static `TIER_CONFIG[tier].name`. Use `getContributorLabel(tier, districtName, stateName)` from `src/lib/contributor-label.ts` so district-tier contributors render as "Mandya Champion" and state-tier as "Karnataka Champion". The API's SELECT_FIELDS includes `sponsoredDistrict` + `sponsoredState` relations so the client gets the names.
+
+34. **Contributor expiry filter** — Every contributor query MUST include the `notExpired()` predicate: `OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]`. Active subscriptions have `expiresAt: null` (Razorpay manages renewals); one-time rows get 30/60/90-day expiries based on amount via `calculateOneTimeExpiry()`. Never write `expiresAt: new Date(... +30 days)` on active subscriptions — that will hide them after 30 days.
+
+35. **Contributor DB is shared with production** — Local `.env.local` points to the same Neon Postgres that production reads. Running `scripts/seed-bulk-dummy-contributors.ts` writes `[TEST]` rows to the LIVE DB — visible on forthepeople.in within the 2-minute cache TTL. For local visual testing, set `FTP_MOCK_CONTRIBUTORS=1` in `.env.local` (requires `NODE_ENV=development`) to use the in-memory mock pool in `src/lib/mock-contributors.ts`. Zero DB writes. Never run the seed script without also running `cleanup-test-contributors.ts` immediately after.
+
+36. **Contributor cache keys** — When invalidating contributor caches, always include: `ftp:contributors:{v1,all,leaderboard,district-rankings,top-tier,growth-trend}` AND any `ftp:contributors:district:<slug>:<slug>` / `ftp:contributors:state-page:<slug>` keys. Use `redis.scan` with `match: "ftp:contributors:*"` after bulk DB writes. Incomplete invalidation causes stale rows to linger for up to 2 minutes.
+
+37. **Pagination contract** — All contributor endpoints accept `?limit=` and `?offset=`, return `{ contributors: [...], total: N }` (or `{ subscribers, oneTime, subscribersTotal, oneTimeTotal }` for the no-params endpoint). Default limits: top-tier=20, district=120, state-page=60, leaderboard=10, all=50. Hard ceiling `HARD_MAX = 500` to prevent megabyte responses. UI should page with "Load more" / "Show N more" rather than fetching everything.
+
+38. **Scrollable rows need render caps** — Horizontal scroll containers with >200 cards kill the browser even without display. `ContributorsClient`'s `ScrollableRow` slices to `INITIAL_VISIBLE=20` + "Show more" expand (+40 each click) up to `MAX_RENDERED=200`. For tickers (DistrictSponsorBanner, StateSponsorSection), cap at 15 chips with "+X more" overflow chip that links to the full contributors page.
+
+39. **Recharts Tooltip formatter signatures** — Recharts v3 type defs are strict. `formatter` param is `ValueType | undefined`; always cast via `typeof v === "number" ? v : Number(v)`. `labelFormatter` receives `ReactNode`; coerce with `String(l ?? "")`. See `ContributorGrowthChart.tsx` for the working pattern.
+
+40. **District overview card order** — Shared order across ALL districts (`OverviewClient.tsx`): Hero → Combined Supporters + Sponsor CTA card (cool slate `#F8FAFC`/`#E2E8F0`) → AI Analysis (warm orange) → Health Score → Alerts → rest. The sponsor card MUST be visually distinct from the AI card — same warm palette makes them blur together. Old separate amber "SPONSORED BY" banner + grey sponsor bar are gone; everything lives in one `DistrictSponsorBanner`.
+
+41. **Per-line auto-scroll with overflow detection** — For tickers with variable content, don't animate unconditionally. Each row measures its own content width via `ResizeObserver` + `scrollWidth / 2` (post-duplication) vs `clientWidth + 50` slack. Only rows that overflow animate. Slower speeds for more prominent tiers (India 120s > State 90s > District 60s). `onMouseEnter`/`onMouseLeave` inline handlers toggle `animationPlayState` per-row so hovering one line doesn't pause the others. Always respect `prefers-reduced-motion`.
+
+42. **Support page is OUTSIDE the QueryClientProvider** — `src/app/support/page.tsx` sits outside `[locale]/layout.tsx` where `<QueryProvider>` is mounted. Client components rendered there can't use `useQuery` safely. Use plain `useEffect + fetch + useState` (see `ContributorCountBanner.tsx`). Only `<ContributorWallClient>` works because it uses `next/dynamic({ ssr: false })` and reaches a provider via some other path — don't rely on this for new components.
+
+43. **Never hardcode live-district counts in UI copy** — Use `getTotalActiveDistrictCount()` / `getActiveStateCount()` from `src/lib/constants/districts.ts`. Formulas like "N × 29 dashboards" for data-point totals should compute dynamically too (see `GlobalContributorsClient.tsx` WHY card). The numbers change as new districts go live, and hardcoding them creates silent drift between copy and reality.
+
+44. **Growth chart launch floor** — The contributors growth query filters `createdAt >= 2026-04-01` (project launch). Any older rows (from test migrations, seed scripts, or bulk imports) would corrupt the timeline. `ContributorGrowthChart.tsx` shows a stat card when fewer than 2 months of data exist and auto-promotes to the Recharts `AreaChart` once the second month arrives — no chart with one data point.

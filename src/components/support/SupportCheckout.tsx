@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Instagram, Linkedin, Github, Twitter, ExternalLink } from "lucide-react";
 import { INDIA_STATES } from "@/lib/constants/districts";
-import { detectAndCleanSocialLink } from "@/lib/social-detect";
+import { validateSocialLink } from "@/lib/social-detect";
 import { QueryClient } from "@tanstack/react-query";
 
 declare global {
@@ -25,12 +25,16 @@ export interface TierConfig {
   emoji: string;
   label: string;
   defaultAmount: number;
+  minAmount: number;
+  maxAmount: number;
+  step: number;
   accent: string;
   isMonthly?: boolean;
   isCustom?: boolean;
   tierKey: string;
   requiresDistrict?: boolean;
   requiresState?: boolean;
+  hookLine?: string;
 }
 
 type Step = "idle" | "form" | "processing" | "success" | "error";
@@ -108,9 +112,11 @@ export default function SupportCheckout({ tier }: Props) {
     }
   }, [paramTier, tier.tierKey]);
 
-  const socialDetect = useMemo(() => detectAndCleanSocialLink(socialLink), [socialLink]);
-  const detectedPlatform = socialDetect?.platform ?? null;
+  const socialDetect = useMemo(() => validateSocialLink(socialLink), [socialLink]);
+  const detectedPlatform = socialDetect.platform;
   const SocialIcon = detectedPlatform ? SOCIAL_ICONS[detectedPlatform] : null;
+  const isVerified = !!detectedPlatform && !socialDetect.warning;
+  const hasWarning = !!socialDetect.warning;
 
   const stateOptions = useMemo(() => INDIA_STATES, []);
   const districtOptions = useMemo(() => {
@@ -138,16 +144,16 @@ export default function SupportCheckout({ tier }: Props) {
 
   function handleAmountBlur() {
     const parsed = parseInt(amountStr.replace(/[^0-9]/g, ""), 10);
-    if (!isNaN(parsed) && parsed >= 10 && parsed <= 500000) {
-      setAmount(parsed);
-      setAmountStr(String(parsed));
-    } else {
-      setAmountStr(String(amount));
-    }
+    const base = Number.isFinite(parsed) ? parsed : tier.minAmount;
+    const clamped = Math.max(tier.minAmount, Math.min(base, tier.maxAmount));
+    const rounded = Math.round(clamped / tier.step) * tier.step;
+    const final = Math.max(tier.minAmount, Math.min(rounded, tier.maxAmount));
+    setAmount(final);
+    setAmountStr(String(final));
   }
 
   function adjust(delta: number) {
-    const next = Math.max(10, Math.min(500000, amount + delta));
+    const next = Math.max(tier.minAmount, Math.min(tier.maxAmount, amount + delta));
     setAmount(next);
     setAmountStr(String(next));
   }
@@ -175,6 +181,7 @@ export default function SupportCheckout({ tier }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             tier: tier.tierKey,
+            amount, // user-chosen amount from +/- buttons
             name: name.trim(),
             email: email.trim() || undefined,
             districtId: districtDbId || undefined,
@@ -212,6 +219,7 @@ export default function SupportCheckout({ tier }: Props) {
                 name: name.trim(),
                 email: email.trim() || undefined,
                 tier: tier.tierKey,
+                amount,
                 districtId: districtDbId || undefined,
                 stateId: stateDbId || undefined,
                 socialLink: socialLink.trim() || undefined,
@@ -325,8 +333,14 @@ export default function SupportCheckout({ tier }: Props) {
             ? `Your ₹${paidAmount.toLocaleString("en-IN")}/month subscription is now active.`
             : `Your ₹${paidAmount.toLocaleString("en-IN")} contribution helps keep ForThePeople.in running.`}
         </div>
-        <div style={{ fontSize: 12, color: "#16A34A", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, padding: "8px 12px", marginBottom: 16, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 12, color: "#16A34A", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, padding: "8px 12px", marginBottom: 10, lineHeight: 1.6 }}>
           Your name will appear on the contributors page within a minute.
+        </div>
+        <div style={{ fontSize: 11, color: "#6B6B6B", background: "#FAFAF8", border: "1px solid #E8E8E4", borderRadius: 8, padding: "8px 12px", marginBottom: 16, lineHeight: 1.6 }}>
+          Want to update your social link or display name later? Email{" "}
+          <a href="mailto:support@forthepeople.in" style={{ color: "#2563EB", textDecoration: "none", fontWeight: 600 }}>
+            support@forthepeople.in
+          </a>
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 12 }}>
           <a href={whatsappHref} target="_blank" rel="noopener noreferrer"
@@ -387,12 +401,14 @@ export default function SupportCheckout({ tier }: Props) {
               />
             )}
           </div>
-          <div style={{ fontSize: 11, marginTop: -6, paddingLeft: 2, color: socialDetect ? "#16A34A" : "#9B9B9B" }}>
-            {socialDetect
-              ? `✅ Your ${socialDetect.platform.charAt(0).toUpperCase() + socialDetect.platform.slice(1)} profile will be shown next to your name`
-              : socialLink.length > 3
-                ? "ℹ️ This link will be shown next to your name"
-                : "Your link will be displayed next to your name. Works with Instagram, LinkedIn, GitHub, Twitter, or any website."}
+          <div style={{ fontSize: 11, marginTop: -6, paddingLeft: 2, color: isVerified ? "#16A34A" : hasWarning ? "#D97706" : !socialDetect.valid ? "#DC2626" : "#9B9B9B" }}>
+            {isVerified && detectedPlatform
+              ? `✓ ${detectedPlatform.charAt(0).toUpperCase() + detectedPlatform.slice(1)} link detected — will be shown next to your name`
+              : hasWarning
+                ? `⚠ ${socialDetect.warning}`
+                : !socialDetect.valid
+                  ? "✗ Invalid link format"
+                  : "Your link will be displayed next to your name. Works with Instagram, LinkedIn, GitHub, Twitter, or any website."}
           </div>
 
           {/* State selector (for district/state tiers, optional for others) */}
@@ -496,22 +512,22 @@ export default function SupportCheckout({ tier }: Props) {
     <div>
       {/* Editable amount row */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-        <button onClick={() => adjust(tier.isMonthly ? -50 : -10)}
-          style={{ width: 28, height: 28, border: "1px solid #E8E8E4", borderRadius: 6, background: "#F5F5F0", cursor: "pointer", fontSize: 16, color: "#6B6B6B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <button onClick={() => adjust(-tier.step)} disabled={amount <= tier.minAmount}
+          style={{ width: 28, height: 28, border: "1px solid #E8E8E4", borderRadius: 6, background: "#F5F5F0", cursor: amount <= tier.minAmount ? "not-allowed" : "pointer", fontSize: 16, color: "#6B6B6B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: amount <= tier.minAmount ? 0.5 : 1 }}>
           −
         </button>
         <div style={{ display: "flex", alignItems: "center", flex: 1, background: "#FAFAF8", border: "1px solid #E8E8E4", borderRadius: 8, padding: "6px 10px" }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: tier.accent, marginRight: 4 }}>₹</span>
           <input
-            type="number" min={10} max={500000} value={amountStr}
+            type="number" min={tier.minAmount} max={tier.maxAmount} step={tier.step} value={amountStr}
             onChange={(e) => setAmountStr(e.target.value)}
             onBlur={handleAmountBlur}
             style={{ flex: 1, border: "none", background: "transparent", fontSize: 16, fontWeight: 800, color: "#1A1A1A", fontFamily: "var(--font-mono, monospace)", outline: "none", minWidth: 0 }}
           />
           {tier.isMonthly && <span style={{ fontSize: 11, color: "#9B9B9B" }}>/mo</span>}
         </div>
-        <button onClick={() => adjust(tier.isMonthly ? 50 : 10)}
-          style={{ width: 28, height: 28, border: "1px solid #E8E8E4", borderRadius: 6, background: "#F5F5F0", cursor: "pointer", fontSize: 16, color: "#6B6B6B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <button onClick={() => adjust(tier.step)} disabled={amount >= tier.maxAmount}
+          style={{ width: 28, height: 28, border: "1px solid #E8E8E4", borderRadius: 6, background: "#F5F5F0", cursor: amount >= tier.maxAmount ? "not-allowed" : "pointer", fontSize: 16, color: "#6B6B6B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: amount >= tier.maxAmount ? 0.5 : 1 }}>
           +
         </button>
       </div>

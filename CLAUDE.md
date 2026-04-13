@@ -58,8 +58,17 @@ docs/GEO-AUDIT-REPORT.md           ← SEO/GEO audit results
 - AI calls: always use callAI()/callAIJSON() from src/lib/ai-provider.ts
 - Admin auth: cookie ftp_admin_v1, ADMIN_PASSWORD with timingSafeEqual
 
-## Current State (April 13, 2026)
-- 10 live districts, 7 states
+## Current State (April 14, 2026)
+- 9 live districts, 7 states (use `getTotalActiveDistrictCount()` in code,
+  never hardcode the number — it changes as districts go live)
+- Contributors & sponsorship system COMPLETE: 5 tiers (One-Time / District
+  ₹99 / State ₹1,999 / Patron ₹9,999 / Founder ₹50K), dynamic Razorpay
+  plans per payment (amount → plan → subscription), expiry on one-time
+  (30/60/90 days by amount), state-page sponsor sections, combined
+  Supporters + Sponsor CTA card (cool slate, distinct from AI Analysis),
+  view-all modal, per-line auto-scroll tickers, admin manual CRUD.
+  DEV-ONLY mock mode: set `FTP_MOCK_CONTRIBUTORS=1` in `.env.local`
+  (double-gated with `NODE_ENV=development` — prod-safe).
 - Admin: unified left sidebar (15 tabs grouped: Overview, Operations
   [+ Content Editor + Update Log], AI & Data, Finance, Analytics + Traffic,
   Security + API Vault, Community). URL `?tab=` routing for in-page sub-tabs.

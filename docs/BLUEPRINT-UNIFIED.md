@@ -3,7 +3,7 @@
 # SINGLE SOURCE OF TRUTH — Combines original + all addendums
 # Claude Code: Read this file at the start of EVERY session.
 # Generic for ANY Indian district. Pilots: Mandya, Mysuru, Bengaluru Urban (Karnataka).
-# Last updated: March 31, 2026
+# Last updated: April 14, 2026
 # ═══════════════════════════════════════════════════════════
 
 ## 1. PROJECT IDENTITY
@@ -2095,4 +2095,239 @@ Weekly AI-generated platform health report with action items + cost tips.
 - Approx cost: $0.002 (~₹0.20) per report. Cheaper than the prompt's ~$0.01 estimate because
   the actual prompt fits in ~1.7K tokens.
 - Weekly cron needs `CRON_SECRET` set; manual trigger from Dashboard works independently.
+
+### Contributors & Sponsorship System (April 13, 2026 — COMPLETE)
+Complete overhaul of the contributor/sponsor system: pricing tiers, expiry,
+variable-based labels, per-district + per-state contributor pages, corporate
+sponsor banner, homepage showcase, admin CRUD, growth chart, performance
+pagination, and dynamic Razorpay plans.
+
+**Tier structure (5 cards, Indian hook lines — `src/lib/constants/razorpay-plans.ts`):**
+- `custom` — One-Time Contribution · ₹10–50,000 (default ₹50) · "Even ₹50 keeps
+  one district's data running for a day"
+- `district` — District Champion · ₹99–1,998/mo (default ₹99) · featured · "₹99/mo
+  — one less Zomato order, one more district with free data 🍛"
+- `state` — State Champion · ₹1,999–9,998/mo · "₹67/day — an auto ride's worth"
+- `patron` — All-India Patron · ₹9,999–49,998/mo · "780 districts. 22,620 dashboards"
+- `founder` — Founding Builder · ₹50,000–99,000/mo · "Royal Contributor"
+- Every tier has `minAmount`, `maxAmount`, `step`, `hookLine`, `isRecurring`.
+- `chai` kept in `TIER_PRIORITY` + `getContributorLabel` for backward compat with
+  pre-merger DB records (they render as "Supporter").
+
+**Dynamic Razorpay plan creation (CRITICAL):**
+- `src/app/api/payment/create-subscription/route.ts` no longer uses preset
+  `RAZORPAY_PLANS`. Each subscription creates a new Razorpay plan with the
+  user's exact amount from the +/- buttons.
+- `SupportCheckout.tsx` passes the clamped `amount` to both create-subscription
+  and verify-subscription routes.
+- `verify-subscription/route.ts` saves the actual amount on the Supporter row
+  (both upsert branches).
+- Preset `RAZORPAY_PLANS` constants remain but are no longer referenced in code.
+
+**Amount clamping + validation:**
+- UI: +/- buttons use `tier.step`, disable at min/max, blur-snap rounds to step
+  within `[minAmount, maxAmount]`. Number input respects the same bounds.
+- Server: `create-order` and `create-subscription` enforce
+  `minAmount ≤ amount ≤ maxAmount` per tier.
+
+**Expiry system (`src/lib/contribution-expiry.ts`):**
+- `calculateOneTimeExpiry(amount, from)` — ≥₹2000 = 90d, ≥₹500 = 60d, else 30d.
+- `calculateFounderGrace()` — 90d post-cancellation grace for founders.
+- `calculateStandardGrace()` — 30d fallback for other cancellations.
+- Active subscriptions have `expiresAt: null` (Razorpay manages renewals).
+- Public API filters: `OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]`.
+- One-time cards show "Active until {date}" / "Expires in N days" via
+  `formatExpiryLabel()` in `ContributorsClient`.
+- Migration script: `scripts/migrate-existing-contributor-expiry.ts` backfills
+  `expiresAt` for pre-existing one-time rows based on amount + createdAt; grants
+  30-day grace if calculated expiry already passed. Also clears stale
+  `expiresAt` on active subscriptions.
+
+**Dynamic labels (`src/lib/contributor-label.ts`):**
+- `getContributorLabel(tier, districtName, stateName)` returns
+  "Mandya Champion", "Karnataka Champion", "India Patron", "Royal Contributor",
+  "Chai Supporter" (legacy), "Supporter" (custom/unknown).
+- Used by `ContributorsClient`, `GlobalContributorsClient`, `PatronCard`,
+  `DistrictSponsorBanner`, `StateSponsorSection`, `TopTierShowcase`.
+
+**Social link validation (`src/lib/social-detect.ts`):**
+- New `validateSocialLink(input)` returns `{ valid, platform, cleanUrl, warning }`.
+- UI shows green checkmark (`✓ {Platform} link detected`), orange warning
+  (`⚠ Could not verify — please double-check`), red error (`✗ Invalid format`).
+
+**API (`src/app/api/data/contributors/route.ts`) — paginated + typed:**
+- Every endpoint accepts `?limit=` and `?offset=`, returns `total`.
+- `?type=top-tier&limit=20` — founders + patrons for homepage.
+- `?district=&state=&limit=500` — district page (all tiers including one-time).
+- `?type=state-page&state=&limit=60` — state-level sponsors (India + state tier).
+- `?type=leaderboard&limit=10` — top active subscribers by tenure.
+- `?type=growth-trend` — `{ points: [{ month, newCount, cumulative }, …] }`.
+- `?type=district-rankings` — aggregated monthly totals per district.
+- No params — paginated `{ subscribers, oneTime, subscribersTotal, oneTimeTotal }`.
+- DB orderBy: `[{ amount: "desc" }, { activatedAt: "asc" }]` so richest
+  contributor shows first. Public response nulls `amount` for recurring rows
+  (only one-time amounts are shown). Hard ceiling `HARD_MAX = 500`.
+- Select includes `sponsoredDistrict` + `sponsoredState` so the response carries
+  `districtName`, `stateName`, `districtSlug`, `stateSlug`.
+
+**UI components — new:**
+- `src/components/common/CorporateSponsorBanner.tsx` — dashed-border CTA banner
+  at the top of every district's contributors page with email + Instagram contacts.
+- `src/components/common/StateSponsorSection.tsx` — 2-line ticker (India / State
+  Champions) rendered below the district grid on `/[locale]/[state]/page.tsx`.
+- `src/components/common/ContributorGrowthChart.tsx` — Recharts AreaChart above
+  the global leaderboard. Shows cumulative growth + "+X new this month".
+- `src/components/support/TopTierShowcase.tsx` — slim homepage strip
+  (`🏆 Backed By`) with CSS `@keyframes ticker-scroll` (60s desktop, 45s mobile,
+  pause on hover, respects `prefers-reduced-motion`). Limited to 20 via
+  `?limit=20`. Renders nothing when no top-tier contributors.
+
+**UI components — redesigned:**
+- `ContributorsClient.tsx` (district page) — 6 sections in order:
+  1. CorporateSponsorBanner, 2. {District} Champions, 3. {State} Champions,
+  4. India Patrons & Royal Contributors, 5. One-Time Supporters, 6. Bottom CTA.
+  Each section caps at 20 cards initially; horizontal scroll with arrow buttons
+  (desktop) and touch swipe (mobile); "Show more (+X)" expands by 40 up to a
+  `MAX_RENDERED = 200` hard cap. Empty sections show a "Be the first {District}
+  Champion" soft CTA.
+- `DistrictSponsorBanner.tsx` (overview ticker) — 3 lines: 👑 India, 🇮🇳 {State},
+  🏛️ {District}. Each line caps at 15 chips with "+X more" chip linking to the
+  contributors page. Mobile: chip labels shrink to 11px, line label wraps.
+- `ContributorWall.tsx` (support page wall) — capped at 50 one-time + 30
+  subscribers; animation duration `wall-scroll` slowed from 30s to 90s so names
+  are readable. "View all {total} →" link shown when oneTimeTotal > 50.
+- `GlobalContributorsClient.tsx` (/contributors) — grows chart + paginated list
+  (50 per page, "Load more" loads next 50 via `limit = PAGE_SIZE × page`);
+  filter=one-time preset from URL param so the support-page wall link works.
+
+**Homepage:**
+- `src/app/[locale]/page.tsx` renders `<TopTierShowcase />` above
+  `HomeDrilldown` + existing `CompactContributorWallClient`.
+
+**Support page (`src/app/support/page.tsx`):**
+- 5 tier cards (chai merged into custom), each shows hook line beneath the
+  description. Passes full props (`minAmount`, `maxAmount`, `step`, `hookLine`)
+  to `SupportCheckout`. Bottom CTA uses the `custom` tier (was `chai`).
+- "View full contributor leaderboard →" link added under the wall.
+- Post-payment success screen instructs users to email
+  `support@forthepeople.in` to update social link or display name later.
+
+**Admin — manual contributor CRUD (`src/app/[locale]/admin/supporters/`):**
+- `ManualSupporterForm.tsx` updated: 5 new tiers (no chai), One-Time/Monthly
+  radio that auto-infers from tier preset, Expires On date picker
+  (auto-calculated for one-time unless overridden).
+- `src/app/api/admin/manual-supporter/route.ts` accepts `isRecurring`,
+  `expiresAt`, `paymentDate`; defaults expiry via `calculateOneTimeExpiry` for
+  one-time rows; sets `subscriptionStatus: "active"` + `activatedAt` for
+  monthly; stamps `paymentId: "manual_<ts>_<rand>"`; invalidates
+  `ftp:contributors:*` (including new `top-tier` key).
+
+**Dev-only mock mode (`src/lib/mock-contributors.ts`):**
+- `isMockEnabled()` double-gated: requires `FTP_MOCK_CONTRIBUTORS=1` AND
+  `NODE_ENV === "development"`. Production-safe even if env var leaks.
+- Deterministic pool (mulberry32, seed=42) of 10,000 contributors with
+  realistic tier distribution and Indian names.
+- Helpers: `mockTopTier`, `mockDistrict`, `mockStatePage`, `mockLeaderboard`,
+  `mockDistrictRankings`, `mockGrowthTrend`, `mockAll` — each applies the same
+  "null amount for recurring" projection as the real API's `toPublic()`.
+- Wired into the API at the very top of the handler; skipped in prod.
+
+**Scripts:**
+- `scripts/seed-bulk-dummy-contributors.ts` — writes up to 10,000 `[TEST]`
+  contributors to the DB for load/visual testing. **Cleanup required before
+  any push:** `npx tsx -r dotenv/config scripts/cleanup-test-contributors.ts`.
+  DB is shared with production — never run the seed without also running the
+  cleanup.
+- `scripts/migrate-existing-contributor-expiry.ts` — one-shot backfill
+  (40 real one-time contributors got natural expiries on 2026-04-13, 4 active
+  subscriptions had stale expiresAt cleared).
+- `scripts/cleanup-test-contributors.ts` — pre-existing, wipes any row where
+  `name LIKE "[TEST]%"` OR `email LIKE "%@test.forthepeople.in"`.
+
+**Cache invalidation:**
+- Verify + verify-subscription + manual-supporter now include
+  `"ftp:contributors:top-tier"` in the invalidation list.
+- Redis `SCAN match: ftp:contributors:*` used when bulk-busting after DB writes.
+
+### Contributors — Final UX Polish (April 14, 2026 — COMPLETE)
+Post-launch polish pass on the contributor system. No feature changes, only
+presentation + performance.
+
+**District overview section order (shared across ALL districts):**
+1. Hero (name, badges, population, illustration)
+2. **Combined Supporters + Sponsor CTA card** (cool slate `#F8FAFC` on
+   `#E2E8F0` border — intentionally distinct from AI Analysis's warm orange)
+3. AI Analysis card
+4. District Health Score
+5. Active Alerts → rest of the dashboard
+
+The old separate "SPONSORED BY" amber banner + grey sponsor CTA bar are gone.
+Both collapsed into one slate card in `DistrictSponsorBanner.tsx`.
+
+**Per-line independent auto-scroll (`DistrictSponsorBanner.tsx`):**
+- Three rows (👑 India / 🇮🇳 State / 🏛️ District) measure their own overflow
+  via `ResizeObserver` + `scrollWidth` vs `clientWidth + 50` slack.
+- Each animates at its own speed only when it overflows:
+  India **120s**, State **90s**, District **60s** (slower at the top so the
+  highest-value tier reads clearest).
+- `onMouseEnter` / `onMouseLeave` toggle `animationPlayState` so hovering any
+  chip pauses that row only; leaving resumes from the paused position.
+- `@media (prefers-reduced-motion: reduce)` disables all animations.
+- Non-overflowing rows show an inline "View all →" chip at the end instead.
+- Sponsor CTA sits inside the same card under a subtle `border-top` separator
+  with red-accent "❤️ Sponsor {District} — ₹99/mo" + secondary state/patron lines.
+
+**Support page contributor wall (`ContributorWall.tsx`):**
+- Animation slowed to **180s** (3-min gentle drift). Was 30s → 90s → 180s as
+  Jayanth tuned the readability.
+- One-time cards capped at 50; subscribers at 30; "View all X →" link shown
+  when totals exceed those caps.
+
+**District contributor rows (`ContributorsClient.tsx`):**
+- Each section row (District / State / India / One-Time) auto-scrolls (90s
+  desktop, 60s mobile) when ≥4 cards; pauses on hover at the viewport level;
+  reduced-motion falls back to native horizontal scroll.
+- Count badges next to section headers are now buttons — clicking "🏛️ {District}
+  Champions 204" opens a full-screen `ViewAllModal` with a responsive grid of
+  all contributors, Esc / click-outside to close, body scroll-locked.
+
+**Homepage `TopTierShowcase.tsx`:**
+- CSS `@keyframes ticker-scroll` 60s desktop / 45s mobile; duplicates the
+  items for seamless loop; pause-on-hover via `:hover .ftp-ticker-track`;
+  respects `prefers-reduced-motion`. Only loops when >6 chips.
+
+**Global `/[locale]/contributors` page (`GlobalContributorsClient.tsx`):**
+- Gradient hero ("The People Behind the Platform") with 3 stat cards
+  (total supporters, active monthly, districts sponsored) + "Join the Movement
+  — from ₹99/mo →" CTA.
+- 💡 WHY IT MATTERS card under hero — counts are derived dynamically from
+  `getTotalActiveDistrictCount()` × `MODULES_PER_DISTRICT`. No hardcoded "9"
+  anywhere.
+- Top-3 leaderboard rows get gold/silver/bronze `border-left: 4px` tints.
+- 🔥 NEW badge on contributors who joined in the last 7 days.
+- ⭐ LONGEST badge on the #1 by tenure (from leaderboard API).
+- Growth chart + "Every district needs a champion. Will you be one?" bottom
+  CTA moved after the Load-more section.
+
+**Growth trend:**
+- API query filtered to `createdAt >= 2026-04-01` (project launch). Applies
+  to both real Prisma query and `mockGrowthTrend()`.
+- `ContributorGrowthChart.tsx` renders a stat card ("📊 April 2026 · X new this
+  month · Tracking since April 2026") when fewer than 2 months of data exist,
+  and auto-swaps to the Recharts `AreaChart` once 2+ months are available.
+
+**Support page prominence (`/support/page.tsx`):**
+- New `ContributorCountBanner.tsx` (plain `fetch`, no QueryClient — this page
+  sits outside `[locale]` layout where the provider lives) shows gold
+  "🏆 N people already backing India's data revolution · View leaderboard →"
+  above the tier cards.
+- "View full contributor leaderboard →" link added beneath the wall.
+- Dynamic district/state counts via `getTotalActiveDistrictCount()` +
+  `getActiveStateCount()` — no more hardcoded "9 active districts".
+
+**Helper utilities added to `src/lib/constants/districts.ts`:**
+- `getTotalActiveDistrictCount()` — sum of active districts across all states.
+- `getActiveStateCount()` — states with ≥1 active district.
+Use these anywhere UI copy references live-district numbers — they auto-update
+as new districts launch.
 ```

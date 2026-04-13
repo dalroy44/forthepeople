@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 import HomeDrilldown from "@/components/layout/HomeDrilldown";
 import MarketTickerClient from "@/components/layout/MarketTickerClient";
 import CompactContributorWallClient from "@/components/support/CompactContributorWallClient";
+import TopTierShowcase from "@/components/support/TopTierShowcase";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://forthepeople.in";
 
@@ -44,6 +45,7 @@ export default async function HomePage({
         ForThePeople.in — India&apos;s Citizen Transparency Platform. District-level government data: crop prices, dam levels, schemes, budget, and more.
       </h1>
       <MarketTickerClient />
+      <TopTierShowcase locale={locale} />
       <HomeDrilldown locale={locale} tickerShown />
       <CompactContributorWallClient />
     </>

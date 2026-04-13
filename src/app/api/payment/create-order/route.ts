@@ -7,9 +7,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRazorpay } from "@/lib/razorpay";
 import prisma from "@/lib/db";
+import { TIER_CONFIG } from "@/lib/constants/razorpay-plans";
 
-const MIN_AMOUNT = 10;
-const MAX_AMOUNT = 500000;
+const ABSOLUTE_MIN = 10;
+const ABSOLUTE_MAX = 500000;
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,11 +28,28 @@ export async function POST(req: NextRequest) {
     if (!name || name.trim().length === 0) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
-    if (!Number.isInteger(amount) || amount < MIN_AMOUNT || amount > MAX_AMOUNT) {
+    if (!Number.isInteger(amount) || amount < ABSOLUTE_MIN || amount > ABSOLUTE_MAX) {
       return NextResponse.json(
-        { error: `Amount must be between ₹${MIN_AMOUNT} and ₹${MAX_AMOUNT.toLocaleString("en-IN")}` },
+        { error: `Amount must be between ₹${ABSOLUTE_MIN} and ₹${ABSOLUTE_MAX.toLocaleString("en-IN")}` },
         { status: 400 }
       );
+    }
+
+    // Per-tier validation (one-time tiers only — subscription tiers go through create-subscription)
+    const tierConfig = TIER_CONFIG[tier];
+    if (tierConfig && !tierConfig.isRecurring) {
+      if (amount < tierConfig.minAmount) {
+        return NextResponse.json(
+          { error: `Minimum amount for ${tierConfig.name} is ₹${tierConfig.minAmount}` },
+          { status: 400 }
+        );
+      }
+      if (amount > tierConfig.maxAmount) {
+        return NextResponse.json(
+          { error: `Maximum amount for ${tierConfig.name} is ₹${tierConfig.maxAmount.toLocaleString("en-IN")}` },
+          { status: 400 }
+        );
+      }
     }
 
     const razorpay = getRazorpay();

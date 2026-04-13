@@ -6,13 +6,18 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Instagram, Linkedin, Github, Twitter, ExternalLink, Plus, Lock } from "lucide-react";
+import { Instagram, Linkedin, Github, Twitter, ExternalLink, Lock } from "lucide-react";
 import { BADGE_COLORS } from "@/lib/badge-level";
 import { TIER_CONFIG } from "@/lib/constants/razorpay-plans";
+import { getContributorLabel } from "@/lib/contributor-label";
 import BadgeExplainer from "@/components/common/BadgeExplainer";
+import ContributorGrowthChart from "@/components/common/ContributorGrowthChart";
+import { getTotalActiveDistrictCount } from "@/lib/constants/districts";
+
+const MODULES_PER_DISTRICT = 29;
 
 interface Contributor {
   id: string;
@@ -26,6 +31,8 @@ interface Contributor {
   monthsActive: number;
   message: string | null;
   createdAt: string;
+  districtName?: string | null;
+  stateName?: string | null;
 }
 
 interface DistrictRanking {
@@ -107,7 +114,7 @@ function ContributorCard({ c, rank, showAmount }: { c: Contributor; rank?: numbe
         </div>
         <div style={{ fontSize: 11, color: "#6B6B6B", display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginTop: 1 }}>
           <span>{tierConf?.emoji ?? "💝"}</span>
-          <span>{tierConf?.name ?? c.tier}</span>
+          <span>{getContributorLabel(c.tier, c.districtName, c.stateName)}</span>
           {showAmount && c.amount && (
             <span style={{ fontWeight: 700, color: "#2563EB", fontFamily: "var(--font-mono, monospace)" }}>
               ₹{c.amount.toLocaleString("en-IN")}
@@ -126,17 +133,37 @@ function ContributorCard({ c, rank, showAmount }: { c: Contributor; rank?: numbe
 }
 
 export default function GlobalContributorsClient({ locale }: { locale: string }) {
-  const [filter, setFilter] = useState("all");
+  const initialFilter = typeof window !== "undefined"
+    ? (new URLSearchParams(window.location.search).get("filter") ?? "all")
+    : "all";
+  const validFilter = FILTERS.find((f) => f.key === initialFilter) ? initialFilter : "all";
+  const [filter, setFilter] = useState(validFilter);
+
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(1);
+
+  // Reset pagination when filter changes
+  const prevFilter = useRef(filter);
+  if (prevFilter.current !== filter) {
+    prevFilter.current = filter;
+    if (page !== 1) setPage(1);
+  }
 
   const { data: leaderboard, isLoading: loadingLb } = useQuery<{ contributors: Contributor[] }>({
     queryKey: ["contributors-leaderboard"],
-    queryFn: () => fetch("/api/data/contributors?type=leaderboard").then((r) => r.json()),
+    queryFn: () => fetch("/api/data/contributors?type=leaderboard&limit=10").then((r) => r.json()),
     staleTime: 120_000,
   });
 
-  const { data: allData, isLoading: loadingAll } = useQuery<{ subscribers: Contributor[]; oneTime: Contributor[] }>({
-    queryKey: ["contributors-all"],
-    queryFn: () => fetch("/api/data/contributors?type=all").then((r) => r.json()),
+  const limit = PAGE_SIZE * page;
+  const { data: allData, isLoading: loadingAll } = useQuery<{
+    subscribers: Contributor[];
+    oneTime: Contributor[];
+    subscribersTotal?: number;
+    oneTimeTotal?: number;
+  }>({
+    queryKey: ["contributors-all-global", limit],
+    queryFn: () => fetch(`/api/data/contributors?limit=${limit}`).then((r) => r.json()),
     staleTime: 120_000,
   });
 
@@ -149,8 +176,24 @@ export default function GlobalContributorsClient({ locale }: { locale: string })
   const leaders = leaderboard?.contributors ?? [];
   const subscribers = allData?.subscribers ?? [];
   const oneTimers = allData?.oneTime ?? [];
+  const subscribersTotal = allData?.subscribersTotal ?? subscribers.length;
+  const oneTimeTotal = allData?.oneTimeTotal ?? oneTimers.length;
   const rankings = rankingsData?.rankings ?? [];
   const awaitingLaunch = rankingsData?.awaitingLaunch ?? [];
+
+  // Hero stats
+  const totalContributors = subscribersTotal + oneTimeTotal;
+  const activeSubscribers = subscribersTotal;
+  const districtsSponsored = rankings.length;
+  const activeDistrictCount = getTotalActiveDistrictCount();
+
+  // Longest-tenure contributor (for ⭐ badge) — computed from the leaderboard top.
+  const longestId = leaders[0]?.id ?? null;
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  const isRecentlyJoined = (createdAt: string) => {
+    const t = Date.parse(createdAt);
+    return !Number.isNaN(t) && Date.now() - t < SEVEN_DAYS;
+  };
 
   // Apply filter
   const filteredLeaders = useMemo(() => {
@@ -168,6 +211,13 @@ export default function GlobalContributorsClient({ locale }: { locale: string })
     return [];
   }, [oneTimers, filter]);
 
+  const canLoadMore =
+    filter === "one-time"
+      ? oneTimers.length < oneTimeTotal
+      : filter === "all"
+        ? subscribers.length < subscribersTotal || oneTimers.length < oneTimeTotal
+        : subscribers.length < subscribersTotal && filteredSubscribers.length >= 0;
+
   const showLeaderboard = filter === "all" || (filter !== "one-time" && filteredLeaders.length > 0);
   const showSubscribers = filter !== "one-time" && filteredSubscribers.length > 0;
   const showOneTime = filter === "all" || filter === "one-time";
@@ -175,13 +225,97 @@ export default function GlobalContributorsClient({ locale }: { locale: string })
 
   return (
     <main style={{ background: "#FAFAF8", minHeight: "calc(100vh - 56px)", paddingBottom: 80 }}>
+      <style>{`
+        @media (max-width: 600px) {
+          .ftp-hero-stats { gap: 20px !important; }
+          .ftp-hero-stats > div { flex: 1 1 45%; }
+        }
+      `}</style>
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "40px 24px" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.5px", marginBottom: 6 }}>
-          Contributors
-        </h1>
-        <p style={{ fontSize: 14, color: "#6B6B6B", marginBottom: 24, lineHeight: 1.6 }}>
-          The people who keep ForThePeople.in running for all 780+ districts. Every contributor is honored here.
-        </p>
+        {/* Hero */}
+        <div
+          style={{
+            background: "linear-gradient(135deg, #FFF7ED 0%, #EFF6FF 50%, #F0FDF4 100%)",
+            borderRadius: 16,
+            padding: "32px 24px",
+            textAlign: "center",
+            marginBottom: 24,
+          }}
+        >
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#1A1A1A", marginBottom: 8, letterSpacing: "-0.5px" }}>
+            The People Behind the Platform
+          </h1>
+          <p style={{ fontSize: 14, color: "#6B6B6B", maxWidth: 500, margin: "0 auto 20px", lineHeight: 1.6 }}>
+            Every name here keeps government data free for 780+ districts.
+            No corporate funding. No ads. Just citizens backing citizens.
+          </p>
+          <div className="ftp-hero-stats" style={{ display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#2563EB", fontFamily: "var(--font-mono, monospace)" }}>
+                {totalContributors.toLocaleString("en-IN")}
+              </div>
+              <div style={{ fontSize: 11, color: "#9B9B9B" }}>Total Supporters</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#16A34A", fontFamily: "var(--font-mono, monospace)" }}>
+                {activeSubscribers.toLocaleString("en-IN")}
+              </div>
+              <div style={{ fontSize: 11, color: "#9B9B9B" }}>Active Monthly</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#D97706", fontFamily: "var(--font-mono, monospace)" }}>
+                {districtsSponsored.toLocaleString("en-IN")}
+              </div>
+              <div style={{ fontSize: 11, color: "#9B9B9B" }}>Districts Sponsored</div>
+            </div>
+          </div>
+          <Link
+            href={`/${locale}/support`}
+            style={{
+              display: "inline-block",
+              marginTop: 20,
+              padding: "10px 24px",
+              background: "#2563EB",
+              color: "#fff",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            Join the Movement — from ₹99/mo →
+          </Link>
+        </div>
+
+        {/* WHY IT MATTERS */}
+        <div
+          style={{
+            background: "#FFFFFF",
+            border: "1px solid #E8E8E4",
+            borderRadius: 12,
+            padding: "16px 20px",
+            marginBottom: 24,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#2563EB", letterSpacing: "0.04em" }}>💡 WHY IT MATTERS</span>
+          </div>
+          <p style={{ fontSize: 13, color: "#4B5563", lineHeight: 1.6, margin: 0 }}>
+            ForThePeople.in tracks{" "}
+            <strong>
+              {(activeDistrictCount * MODULES_PER_DISTRICT).toLocaleString("en-IN")}+ data points
+            </strong>{" "}
+            across{" "}
+            <strong>
+              {activeDistrictCount} active district{activeDistrictCount === 1 ? "" : "s"}
+            </strong>
+            , refreshed every 5–30 minutes from official government portals. Each ₹99/month
+            contribution keeps one district&apos;s <strong>{MODULES_PER_DISTRICT} dashboards</strong>{" "}
+            free — covering crop prices, dam levels, school data, police stats, weather,
+            and {MODULES_PER_DISTRICT - 5} more modules — for every citizen in that district.{" "}
+            <strong>Zero ads. Zero paywalls. 100% citizen-funded.</strong>
+          </p>
+        </div>
 
         <BadgeExplainer />
 
@@ -219,7 +353,67 @@ export default function GlobalContributorsClient({ locale }: { locale: string })
               <div style={{ padding: 32, textAlign: "center", color: "#9B9B9B" }}>No active subscribers yet.</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 32 }}>
-                {filteredLeaders.map((c, i) => <ContributorCard key={c.id} c={c} rank={i + 1} />)}
+                {filteredLeaders.map((c, i) => {
+                  const topBorder = i === 0 ? "#FEF3C7" : i === 1 ? "#F1F5F9" : i === 2 ? "#FED7AA" : null;
+                  const isLongest = c.id === longestId;
+                  const isNew = isRecentlyJoined(c.createdAt);
+                  return (
+                    <div
+                      key={c.id}
+                      style={{
+                        position: "relative",
+                        borderLeft: topBorder ? `4px solid ${topBorder}` : undefined,
+                        borderRadius: 12,
+                        paddingLeft: topBorder ? 0 : undefined,
+                      }}
+                    >
+                      <ContributorCard c={c} rank={i + 1} />
+                      {(isNew || isLongest) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 6,
+                            right: 8,
+                            display: "flex",
+                            gap: 4,
+                            pointerEvents: "none",
+                          }}
+                        >
+                          {isNew && (
+                            <span
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                padding: "2px 6px",
+                                borderRadius: 999,
+                                background: "#FEE2E2",
+                                color: "#B91C1C",
+                                letterSpacing: "0.04em",
+                              }}
+                            >
+                              🔥 NEW
+                            </span>
+                          )}
+                          {isLongest && (
+                            <span
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                padding: "2px 6px",
+                                borderRadius: 999,
+                                background: "#FEF3C7",
+                                color: "#92400E",
+                                letterSpacing: "0.04em",
+                              }}
+                            >
+                              ⭐ LONGEST
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>
@@ -273,9 +467,14 @@ export default function GlobalContributorsClient({ locale }: { locale: string })
         {/* Active Subscribers */}
         {showSubscribers && (
           <>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", marginBottom: 12 }}>
-              🙏 Active Subscribers
-            </h2>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", margin: 0 }}>
+                🙏 Active Subscribers
+              </h2>
+              <span style={{ fontSize: 12, color: "#9B9B9B" }}>
+                {filter === "all" ? subscribersTotal.toLocaleString("en-IN") : filteredSubscribers.length.toLocaleString("en-IN")} total
+              </span>
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 10, marginBottom: 32 }}>
               {filteredSubscribers.map((c) => <ContributorCard key={c.id} c={c} />)}
             </div>
@@ -285,33 +484,86 @@ export default function GlobalContributorsClient({ locale }: { locale: string })
         {/* One-Time Contributors */}
         {showOneTime && (
           <>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", marginBottom: 12 }}>
-              💝 One-Time Contributors
-            </h2>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", margin: 0 }}>
+                💝 One-Time Contributors
+              </h2>
+              <span style={{ fontSize: 12, color: "#9B9B9B" }}>
+                {oneTimeTotal.toLocaleString("en-IN")} total
+              </span>
+            </div>
             {loadingAll ? (
               <div style={{ padding: 20, textAlign: "center", color: "#9B9B9B" }}>Loading...</div>
             ) : filteredOneTimers.length === 0 ? (
               <div style={{ padding: 32, textAlign: "center", color: "#9B9B9B" }}>No contributions yet. Be the first!</div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 10, marginBottom: 32 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 10, marginBottom: 16 }}>
                 {filteredOneTimers.map((c) => <ContributorCard key={c.id} c={c} showAmount />)}
               </div>
             )}
           </>
         )}
 
-        {/* CTA */}
-        <Link
-          href={`/${locale}/support`}
+        {/* Load more */}
+        {canLoadMore && !loadingAll && (
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              style={{
+                padding: "10px 24px",
+                background: "#FFFFFF",
+                border: "1.5px solid #BFDBFE",
+                color: "#2563EB",
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Load more ({PAGE_SIZE} more) →
+            </button>
+            <div style={{ marginTop: 6, fontSize: 11, color: "#9B9B9B" }}>
+              Showing {(subscribers.length + oneTimers.length).toLocaleString("en-IN")} of {(subscribersTotal + oneTimeTotal).toLocaleString("en-IN")}
+            </div>
+          </div>
+        )}
+
+        {/* Growth trend (stat card or chart) */}
+        <ContributorGrowthChart />
+
+        {/* Bottom CTA */}
+        <div
           style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "24px", background: "#F5F5F0", border: "2px dashed #D0D0CC",
-            borderRadius: 14, textDecoration: "none", color: "#6B6B6B", fontSize: 14, fontWeight: 600,
+            background: "#EFF6FF",
+            border: "1px solid #BFDBFE",
+            borderRadius: 14,
+            padding: "28px 24px",
+            textAlign: "center",
+            marginTop: 8,
           }}
         >
-          <Plus size={18} />
-          Become a supporter →
-        </Link>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", marginBottom: 8 }}>
+            Every district needs a champion. Will you be one?
+          </div>
+          <div style={{ fontSize: 13, color: "#6B6B6B", marginBottom: 16, lineHeight: 1.6 }}>
+            ₹99/mo — that&apos;s all it takes to keep an entire district&apos;s data free for every citizen.
+          </div>
+          <Link
+            href={`/${locale}/support`}
+            style={{
+              display: "inline-block",
+              padding: "10px 28px",
+              background: "#2563EB",
+              color: "#fff",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            Become a Champion →
+          </Link>
+        </div>
 
         <div style={{ textAlign: "center", marginTop: 32 }}>
           <Link href={`/${locale}`} style={{ fontSize: 13, color: "#9B9B9B", textDecoration: "none" }}>

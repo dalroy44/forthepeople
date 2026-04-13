@@ -9,8 +9,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import SupportCheckout from "@/components/support/SupportCheckout";
 import ContributorWallClient from "@/components/support/ContributorWallClient";
+import ContributorCountBanner from "@/components/support/ContributorCountBanner";
 import FeedbackModal from "@/components/common/FeedbackModal";
 import { TIER_CONFIG, TIER_ORDER } from "@/lib/constants/razorpay-plans";
+import { getTotalActiveDistrictCount, getActiveStateCount } from "@/lib/constants/districts";
 import SupporterQuotes from "@/components/support/SupporterQuotes";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://forthepeople.in";
@@ -36,6 +38,8 @@ const COST_BREAKDOWN = [
 ];
 
 export default function SupportPage() {
+  const activeDistricts = getTotalActiveDistrictCount();
+  const activeStates = getActiveStateCount();
   return (
     <main style={{ background: "#FAFAF8", minHeight: "calc(100vh - 56px)", paddingBottom: 80 }}>
 
@@ -74,7 +78,7 @@ export default function SupportPage() {
               Target cost at full scale (780 districts)
             </div>
             <div style={{ fontSize: 11, color: "#9B9B9B", marginTop: 6 }}>
-              Current cost per district is higher with 9 active districts. As we scale to 780, per-district costs decrease significantly.
+              Current cost per district is higher with {activeDistricts} active district{activeDistricts === 1 ? "" : "s"}. As we scale to 780, per-district costs decrease significantly.
             </div>
           </div>
         </div>
@@ -94,6 +98,9 @@ export default function SupportPage() {
           </a>{" "}
           and we&apos;ll arrange an alternative payment method.
         </div>
+
+        {/* ── Contributor count banner (prominent CTA to leaderboard) ── */}
+        <ContributorCountBanner />
 
         {/* ── 2. Tier cards ── */}
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1A", marginBottom: 16, letterSpacing: "-0.3px" }}>
@@ -145,20 +152,27 @@ export default function SupportPage() {
                 <div style={{ fontSize: 11, color: "#9B9B9B", marginBottom: 12 }}>
                   {tier.isRecurring ? `Monthly · ₹${tier.amount.toLocaleString("en-IN")}/mo` : isCustom ? "Any amount helps!" : "One-time · edit amount below"}
                 </div>
-                <div style={{ fontSize: 12, color: "#6B6B6B", marginBottom: 16, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12, color: "#6B6B6B", marginBottom: 6, lineHeight: 1.5 }}>
                   {tier.description}
+                </div>
+                <div style={{ fontSize: 11, color: "#9B9B9B", fontStyle: "italic", marginBottom: 14, lineHeight: 1.5 }}>
+                  {tier.hookLine}
                 </div>
                 <Suspense><SupportCheckout
                   tier={{
                     emoji: tier.emoji,
                     label: tier.name,
                     defaultAmount: tier.amount,
+                    minAmount: tier.minAmount,
+                    maxAmount: tier.maxAmount,
+                    step: tier.step,
                     accent: tier.accent,
                     isMonthly: tier.isRecurring,
                     isCustom,
                     tierKey: key,
                     requiresDistrict: tier.requiresDistrict,
                     requiresState: tier.requiresState,
+                    hookLine: tier.hookLine,
                   }}
                 /></Suspense>
               </div>
@@ -168,6 +182,11 @@ export default function SupportPage() {
 
         {/* ── 3. Active supporters (scrolling) + one-time ── */}
         <ContributorWallClient />
+        <div style={{ textAlign: "center", marginTop: 12, marginBottom: 24 }}>
+          <Link href="/en/contributors" style={{ fontSize: 13, color: "#2563EB", fontWeight: 500, textDecoration: "none" }}>
+            View full contributor leaderboard →
+          </Link>
+        </div>
 
         {/* ── 4. Supporter quotes ── */}
         <div style={{ marginTop: 40 }}>
@@ -240,7 +259,7 @@ export default function SupportPage() {
             updated every 5–30 minutes from government portals.
           </div>
           <div style={{ fontSize: 13, color: "#6B6B6B", lineHeight: 1.7, marginBottom: 20 }}>
-            This is the current annual cost as of April 2026, covering 9 active districts across 6 states.
+            This is the current annual cost as of April 2026, covering {activeDistricts} active district{activeDistricts === 1 ? "" : "s"} across {activeStates} state{activeStates === 1 ? "" : "s"}.
             As we expand to all 780+ districts, costs will grow significantly.
             Pricing for sponsorship tiers may be revised as the platform scales.{" "}
             <strong style={{ color: "#1A1A1A" }}>Early supporters lock in current rates.</strong>
@@ -331,7 +350,17 @@ export default function SupportPage() {
             and 26 more data streams. Free for every citizen in that district.
           </p>
           <div style={{ display: "inline-block", minWidth: 220 }}>
-            <Suspense><SupportCheckout tier={{ emoji: "❤️", label: "Buy me a Chai", defaultAmount: 50, accent: "#2563EB", tierKey: "chai" }} /></Suspense>
+            <Suspense><SupportCheckout tier={{
+              emoji: "❤️",
+              label: TIER_CONFIG.custom.name,
+              defaultAmount: TIER_CONFIG.custom.amount,
+              minAmount: TIER_CONFIG.custom.minAmount,
+              maxAmount: TIER_CONFIG.custom.maxAmount,
+              step: TIER_CONFIG.custom.step,
+              accent: "#2563EB",
+              tierKey: "custom",
+              hookLine: TIER_CONFIG.custom.hookLine,
+            }} /></Suspense>
           </div>
         </div>
 
