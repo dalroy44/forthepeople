@@ -45,25 +45,8 @@ interface SubscriberItem {
   monthsActive: number;
 }
 
-function amountColor(rupees: number): string {
-  if (rupees >= 10000) return "#D97706";
-  if (rupees >= 1000) return "#2563EB";
-  if (rupees >= 100) return "#16A34A";
-  return "#6B6B6B";
-}
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
 function ContributorCard({ item }: { item: ContributorItem }) {
   const emoji = (item.tier && TIER_EMOJI[item.tier]) || "💝";
-  const color = amountColor(item.amountRupees);
   return (
     <div
       style={{
@@ -74,17 +57,17 @@ function ContributorCard({ item }: { item: ContributorItem }) {
     >
       <div style={{ fontSize: 22, marginBottom: 6 }}>{emoji}</div>
       <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {item.name}
+        {item.displayName}
       </div>
-      <div style={{ fontSize: 14, fontWeight: 800, color, fontFamily: "var(--font-mono, monospace)", marginBottom: 4, letterSpacing: "-0.3px" }}>
-        ₹{item.amountRupees.toLocaleString("en-IN")}
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#2563EB", marginBottom: 4, letterSpacing: "-0.2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {item.tierLabel}
       </div>
       {item.message && (
         <div style={{ fontSize: 10, color: "#6B6B6B", lineHeight: 1.4, marginBottom: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
           &ldquo;{item.message.slice(0, 30)}{item.message.length > 30 ? "…" : ""}&rdquo;
         </div>
       )}
-      <div style={{ fontSize: 10, color: "#9B9B9B" }}>{timeAgo(item.paidAt)}</div>
+      <div style={{ fontSize: 10, color: "#9B9B9B" }}>{item.timeAgo}</div>
     </div>
   );
 }
@@ -249,7 +232,7 @@ export default function ContributorWall() {
                 style={{ display: "flex", gap: 12, width: shouldScroll ? "max-content" : undefined }}
               >
                 {(shouldScroll ? [...contributors, ...contributors] : contributors).map((item, i) => (
-                  <ContributorCard key={`${item.name}-${i}`} item={item} />
+                  <ContributorCard key={`${item.displayName}-${i}`} item={item} />
                 ))}
               </div>
             </div>

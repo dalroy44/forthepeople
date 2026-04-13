@@ -81,9 +81,9 @@ export default function CompactContributorWall() {
                       key={i}
                       style={{ fontSize: 12, color: "#1A1A1A", whiteSpace: "nowrap", flexShrink: 0 }}
                     >
-                      <span style={{ fontWeight: 600 }}>{c.name}</span>
-                      <span style={{ color: "#16A34A", fontFamily: "var(--font-mono, monospace)", marginLeft: 4, fontWeight: 700 }}>
-                        ₹{c.amountRupees.toLocaleString("en-IN")}
+                      <span style={{ fontWeight: 600 }}>{c.displayName}</span>
+                      <span style={{ color: "#16A34A", marginLeft: 4, fontWeight: 700 }}>
+                        {c.tierLabel}
                       </span>
                       <span style={{ color: "#C0C0BA", marginLeft: 8 }}>•</span>
                     </span>

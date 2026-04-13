@@ -5,6 +5,16 @@
 # Generic for ANY Indian district. Pilots: Mandya, Mysuru, Bengaluru Urban (Karnataka).
 # Last updated: April 14, 2026
 # ═══════════════════════════════════════════════════════════
+#
+# 2026-04-14 — Security/perf hardening (responsible disclosure):
+#   • /api/payment/contributors anonymized (DPDP): displayName (first + last initial),
+#     tierLabel (range, not exact ₹), timeAgo bucket, message truncated to 100 chars.
+#     Removed amountRupees and exact paidAt from public response. Cache key bumped to v2.
+#     Admin endpoint (/api/admin/payments) unchanged — still returns full data.
+#   • SupportCheckout.tsx: Razorpay script loader now de-dupes via DOM query (kills
+#     1,200+/session tracking loop). Replaced `new QueryClient()` bug with useQueryClient()
+#     (try/catch fallback when rendered outside QueryClientProvider).
+#   • robots.ts: removed /admin/ from disallow list — reduces attack-surface signaling.
 
 ## 1. PROJECT IDENTITY
 

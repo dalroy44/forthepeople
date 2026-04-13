@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { Instagram, Linkedin, Github, Twitter, ExternalLink } from "lucide-react";
 import { INDIA_STATES } from "@/lib/constants/districts";
 import { validateSocialLink } from "@/lib/social-detect";
-import { QueryClient } from "@tanstack/react-query";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 declare global {
   interface Window {
@@ -39,11 +39,24 @@ export interface TierConfig {
 
 type Step = "idle" | "form" | "processing" | "success" | "error";
 
+const RAZORPAY_SRC = "https://checkout.razorpay.com/v1/checkout.js";
+
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
-    if (typeof window !== "undefined" && window.Razorpay) return resolve(true);
+    if (typeof window === "undefined") return resolve(false);
+    if (window.Razorpay) return resolve(true);
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${RAZORPAY_SRC}"]`
+    );
+    if (existing) {
+      if (window.Razorpay) return resolve(true);
+      existing.addEventListener("load", () => resolve(true));
+      existing.addEventListener("error", () => resolve(false));
+      return;
+    }
     const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.src = RAZORPAY_SRC;
+    script.async = true;
     script.onload = () => resolve(true);
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
@@ -63,15 +76,19 @@ interface Props {
 }
 
 export default function SupportCheckout({ tier }: Props) {
-  // Invalidate contributor queries after payment (works when inside QueryClientProvider)
+  let queryClient: QueryClient | null = null;
+  try {
+    queryClient = useQueryClient();
+  } catch {
+    queryClient = null;
+  }
+
   function invalidateContributorQueries() {
-    try {
-      // Access the default query client if available in the React tree
-      const qc = new QueryClient();
-      qc.invalidateQueries({ queryKey: ["district-sponsors"] });
-      qc.invalidateQueries({ queryKey: ["contributors"] });
-      qc.invalidateQueries({ queryKey: ["homepage-preview"] });
-    } catch { /* no provider — /support page outside [locale] layout */ }
+    if (!queryClient) return;
+    queryClient.invalidateQueries({ queryKey: ["contributors"] });
+    queryClient.invalidateQueries({ queryKey: ["contributors-all"] });
+    queryClient.invalidateQueries({ queryKey: ["district-sponsors"] });
+    queryClient.invalidateQueries({ queryKey: ["homepage-preview"] });
   }
   const containerRef = useRef<HTMLDivElement>(null);
   const [amount, setAmount] = useState(tier.defaultAmount);
