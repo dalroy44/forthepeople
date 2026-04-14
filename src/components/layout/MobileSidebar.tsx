@@ -34,7 +34,7 @@ const SIDEBAR_CATEGORIES = [
   },
   {
     label: "LOCAL ECONOMY",
-    slugs: ["industries", "farm", "map", "data-sources", "responsibility"],
+    slugs: ["industries", "farm", "map", "data-sources", "update-log", "responsibility"],
   },
 ];
 

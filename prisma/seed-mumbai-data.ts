@@ -191,10 +191,9 @@ async function main() {
         { districtId, year: 1991, population: 9926000, sexRatio: 808, literacy: 82.2, urbanPct: 100, density: 16462, source: "Census of India 1991" },
         { districtId, year: 2001, population: 11978450, sexRatio: 822, literacy: 86.4, urbanPct: 100, density: 19864, source: "Census of India 2001" },
         { districtId, year: 2011, population: 12442373, sexRatio: 832, literacy: 89.73, urbanPct: 100, density: 20634, source: "Census of India 2011" },
-        { districtId, year: 2026, population: 21000000, sexRatio: 850, literacy: 92.0, urbanPct: 100, density: 34826, source: "Estimate — Mumbai Metropolitan Region" },
       ],
     });
-    console.log("  ✅ Population history seeded (8 records)");
+    console.log("  ✅ Population history seeded (7 records)");
   } else {
     console.log(`  ⏭  Population history already exists (${popCount} records)`);
   }

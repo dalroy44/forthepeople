@@ -15,6 +15,37 @@
 #     1,200+/session tracking loop). Replaced `new QueryClient()` bug with useQueryClient()
 #     (try/catch fallback when rendered outside QueryClientProvider).
 #   • robots.ts: removed /admin/ from disallow list — reduces attack-surface signaling.
+#
+# 2026-04-14 — Mumbai routing + public UpdateLog feed + data fixes:
+#   • Routing: slug aliases added (budget→finance, famous→famous-personalities,
+#     citizen→citizen-corner, panchayat→gram-panchayat, farm-advisory→farm).
+#     Static pages now take precedence over [taluk] catch-all, killing the
+#     "Loading taluk…" bug on external/bookmarked links. Each alias uses
+#     permanentRedirect so search engines collapse to canonical slug.
+#   • UpdateLog extended: +recordCount Int?, +details Json? (existing oldValue/
+#     newValue diff kept; new fields serve bulk scraper summaries). Run
+#     `npx prisma db push` to apply. logUpdate() helper takes the new params.
+#   • Scraper integration: weather/crops/news jobs now call logUpdate() after
+#     each successful run (source="scraper", moduleName=module, recordCount=N).
+#   • Public transparency surface: GET /api/data/update-log?district=…&filter=
+#     (all|scrapers|admin|seeds) with cursor pagination; new module page at
+#     /[locale]/[state]/[district]/update-log showing timeline, module/source
+#     badges, relative timestamps, filter tabs, load more. Added to LOCAL INFO
+#     section of desktop + mobile sidebars. New SIDEBAR_MODULES entry with
+#     History icon.
+#   • Mumbai fixes:
+#     – Courts: avgDays is Float? in schema but treated as number in UI, causing
+#       Couldn't load Courts via ErrorBoundary when any row had null. Interface
+#       now `number | null`; reduce / toFixed sites guarded.
+#     – Taluk count: Overview hero + StatCard now prefer DB count
+#       (overview.taluks.length) over hardcoded talukCount in districts.ts so
+#       Overview and Map agree.
+#     – Population: /api/data/population filters out rows whose source contains
+#       "Metropolitan Region" (MMR estimate was 21M for Mumbai district = wrong).
+#       Seed-mumbai-data.ts row removed too.
+#     – RTI fee ₹₹10: file-rti UI strips leading ₹/Rs prefix before prepending ₹.
+#     – Services page gained DataSourceBanner; state-config registers sources
+#       for services and update-log.
 
 ## 1. PROJECT IDENTITY
 

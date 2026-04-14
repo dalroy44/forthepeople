@@ -10,6 +10,7 @@
 // ═══════════════════════════════════════════════════════════
 import { prisma } from "@/lib/db";
 import { JobContext, ScraperResult } from "../types";
+import { logUpdate } from "@/lib/update-log";
 
 const OWM_KEY = process.env.OPENWEATHER_API_KEY;
 
@@ -59,7 +60,7 @@ export async function scrapeWeather(ctx: JobContext): Promise<ScraperResult> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data: OWMResponse = await res.json();
 
-    await prisma.weatherReading.create({
+    const reading = await prisma.weatherReading.create({
       data: {
         districtId: ctx.districtId,
         temperature: data.main.temp,
@@ -87,7 +88,22 @@ export async function scrapeWeather(ctx: JobContext): Promise<ScraperResult> {
       await prisma.weatherReading.deleteMany({ where: { id: { in: old.map((r) => r.id) } } });
     }
 
-    ctx.log(`Weather recorded: ${data.main.temp}°C, ${data.weather[0]?.description}`);
+    const summary = `Weather updated: ${data.main.temp}°C, ${data.weather[0]?.description ?? "—"}`;
+    ctx.log(summary);
+
+    await logUpdate({
+      source: "scraper",
+      actorLabel: "cron",
+      tableName: "WeatherReading",
+      recordId: reading.id,
+      action: "create",
+      districtId: ctx.districtId,
+      districtName: ctx.districtName,
+      moduleName: "weather",
+      description: summary,
+      recordCount: 1,
+    });
+
     return { success: true, recordsNew: 1, recordsUpdated: 0 };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

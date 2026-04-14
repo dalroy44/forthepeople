@@ -9,6 +9,8 @@ import { use, useState } from "react";
 import { Briefcase, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { useServices } from "@/hooks/useRealtimeData";
 import { ModuleHeader, LoadingShell, ErrorBlock } from "@/components/district/ui";
+import DataSourceBanner from "@/components/common/DataSourceBanner";
+import { getModuleSources } from "@/lib/constants/state-config";
 
 export default function ServicesPage({ params }: { params: Promise<{ locale: string; state: string; district: string }> }) {
   const { locale, state, district } = use(params);
@@ -25,6 +27,7 @@ export default function ServicesPage({ params }: { params: Promise<{ locale: str
   return (
     <div style={{ padding: 24 }}>
       <ModuleHeader icon={Briefcase} title="Citizen Services" description="Step-by-step guides for government services, documents needed, fees, and timelines" backHref={base} />
+      {(() => { const _src = getModuleSources("services", state); return <DataSourceBanner moduleName="services" sources={_src.sources} updateFrequency={_src.frequency} isLive={_src.isLive} />; })()}
       {isLoading && <LoadingShell rows={4} />}
       {error && <ErrorBlock />}
 

@@ -122,6 +122,8 @@ export default function OverviewClient({ locale, stateSlug, districtSlug, stateN
   const base = `/${locale}/${stateSlug}/${districtSlug}`;
   const stateConfig = getStateConfig(stateSlug);
   const { data: overview } = useOverview(districtSlug, stateSlug);
+  const dbTalukCount = overview?.data?.taluks?.length;
+  const displayedTalukCount = dbTalukCount ?? districtData.talukCount;
   const { data: crops, isLoading: cropsLoading } = useCropPrices(districtSlug, stateSlug);
   const { data: weather, isLoading: weatherLoading } = useWeather(districtSlug, stateSlug);
   const { data: water, isLoading: waterLoading } = useWater(districtSlug, stateSlug);
@@ -174,7 +176,7 @@ export default function OverviewClient({ locale, stateSlug, districtSlug, stateN
           population: districtData.population ? `${(districtData.population / 1000000).toFixed(2)}M` : undefined,
           area: districtData.area ? districtData.area.toLocaleString("en-IN") : undefined,
           literacy: districtData.literacy ? `${districtData.literacy}%` : undefined,
-          subDistrictCount: districtData.talukCount,
+          subDistrictCount: displayedTalukCount,
           subDistrictLabel: stateConfig?.subDistrictUnitPlural ?? "Taluks",
         }}
       />
@@ -323,7 +325,7 @@ export default function OverviewClient({ locale, stateSlug, districtSlug, stateN
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10 }}>
             <StatCard label="Population" value={districtData.population?.toLocaleString("en-IN") ?? "—"} icon={Users} />
             <StatCard label="Area (km²)" value={districtData.area?.toLocaleString("en-IN") ?? "—"} icon={TreePine} />
-            <StatCard label={stateConfig?.subDistrictUnitPlural ?? "Taluks"} value={districtData.talukCount ?? "—"} icon={MapPin} />
+            <StatCard label={stateConfig?.subDistrictUnitPlural ?? "Taluks"} value={displayedTalukCount ?? "—"} icon={MapPin} />
             {(stateConfig?.showVillages !== false) && <StatCard label="Villages" value={districtData.villageCount?.toLocaleString("en-IN") ?? "—"} icon={MapPin} />}
             <StatCard label="Literacy" value={districtData.literacy ? `${districtData.literacy}%` : "—"} icon={Percent} accent="#16A34A" />
             <StatCard label="Sex Ratio" value={districtData.sexRatio ? `${districtData.sexRatio}/1k` : "—"} icon={Activity} />

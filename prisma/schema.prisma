@@ -1592,6 +1592,8 @@ model UpdateLog {
   districtName String?
   moduleName   String?
   description  String?   @db.Text
+  recordCount  Int?                              // Number of records affected (bulk ops)
+  details      Json?                             // Structured diff / metadata
   timestamp    DateTime  @default(now())
 
   @@index([tableName, timestamp])

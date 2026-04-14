@@ -42,7 +42,7 @@ const SIDEBAR_CATEGORIES = [
   },
   {
     label: "LOCAL INFO",
-    slugs: ["famous-personalities", "alerts", "offices", "citizen-corner", "responsibility", "news", "data-sources"],
+    slugs: ["famous-personalities", "alerts", "offices", "citizen-corner", "responsibility", "news", "data-sources", "update-log"],
   },
 ];
 

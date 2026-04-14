@@ -50,7 +50,7 @@ export default function FileRTIPage({ params }: { params: Promise<{ locale: stri
                   {t.topicLocal && <div style={{ fontSize: 12, color: "#9B9B9B", fontFamily: "var(--font-regional)" }}>{t.topicLocal}</div>}
                   <div style={{ fontSize: 12, color: "#6B6B6B", marginTop: 2 }}>PIO: {t.department}</div>
                   <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: "#9B9B9B", background: "#F5F5F0", padding: "2px 7px", borderRadius: 8 }}>Fee: ₹{t.feeAmount}</span>
+                    <span style={{ fontSize: 11, color: "#9B9B9B", background: "#F5F5F0", padding: "2px 7px", borderRadius: 8 }}>Fee: ₹{String(t.feeAmount ?? "").replace(/^\s*(₹|Rs\.?)\s*/i, "") || "0"}</span>
                   </div>
                 </button>
               ))}

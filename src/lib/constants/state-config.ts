@@ -435,6 +435,8 @@ export function getModuleSources(moduleName: string, stateSlug: string): ModuleS
     "citizen-corner":  { sources: ["District Administration", "Citizen feedback"], frequency: "Weekly" },
     alerts:            { sources: ["IMD", "District Administration", "NDMA"], frequency: "Real-time", isLive: true },
     "responsibility":  { sources: ["District Administration"], frequency: "Quarterly" },
+    "update-log":      { sources: ["ForThePeople.in Admin & Scrapers"], frequency: "Real-time", isLive: true },
+    services:          { sources: ["District NIC Portal", "State Government Directory", "MyScheme.gov.in"], frequency: "Quarterly" },
   };
   return map[moduleName] ?? { sources: ["Government public data portals"], frequency: "Periodic" };
 }

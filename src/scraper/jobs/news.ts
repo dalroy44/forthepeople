@@ -11,6 +11,7 @@
 import * as cheerio from "cheerio";
 import { prisma } from "@/lib/db";
 import { classifyArticleWithAI, executeNewsAction } from "@/lib/news-action-engine";
+import { logUpdate } from "@/lib/update-log";
 
 // Keyword-matcher categories that still benefit from AI-driven data extraction
 // (because we act on them downstream — create Infrastructure projects, alerts,
@@ -314,7 +315,24 @@ export async function scrapeNews(ctx: JobContext): Promise<ScraperResult> {
       await prisma.newsItem.deleteMany({ where: { id: { in: old.map((n) => n.id) } } });
     }
 
-    ctx.log(`News: ${newCount} new items across ${queries.length} queries`);
+    const summary = `News: ${newCount} new items across ${queries.length} queries`;
+    ctx.log(summary);
+
+    if (newCount > 0) {
+      await logUpdate({
+        source: "scraper",
+        actorLabel: "cron",
+        tableName: "NewsItem",
+        recordId: `${ctx.districtId}:${Date.now()}`,
+        action: "create",
+        districtId: ctx.districtId,
+        districtName: ctx.districtName,
+        moduleName: "news",
+        description: summary,
+        recordCount: newCount,
+      });
+    }
+
     return { success: true, recordsNew: newCount, recordsUpdated: 0 };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

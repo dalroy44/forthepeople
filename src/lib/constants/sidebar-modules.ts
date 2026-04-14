@@ -6,7 +6,7 @@ import {
   Home, Zap, GraduationCap, Tractor,
   ClipboardList, FilePen, Building, Scale, Heart,
   AlertTriangle, Building2, Handshake, Newspaper,
-  Database, Flame, Star, BookOpen,
+  Database, Flame, Star, BookOpen, History,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -59,6 +59,7 @@ export const SIDEBAR_MODULES: SidebarModule[] = [
   { slug: "responsibility",   label: "My Responsibility",   emoji: "🌱", icon: Flame,            description: "What YOU can do to improve your district", group: "info" },
   { slug: "news",             label: "News & Updates",      emoji: "📰", icon: Newspaper,        description: "Local news aggregated from RSS", group: "info" },
   { slug: "data-sources",     label: "Data Sources",        emoji: "🔗", icon: Database,         description: "All official sources + scraping status", group: "info" },
+  { slug: "update-log",       label: "Update Log",          emoji: "🕒", icon: History,          description: "Every data change, live", group: "info" },
   { slug: "contributors",     label: "Contributors",        emoji: "🤝", icon: Heart,            description: "People who support this district's data", group: "info" },
 ];
 

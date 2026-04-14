@@ -263,7 +263,7 @@ export interface CourtStat {
   filed: number;
   disposed: number;
   pending: number;
-  avgDays: number;
+  avgDays: number | null;
 }
 
 export interface ElectionResult {

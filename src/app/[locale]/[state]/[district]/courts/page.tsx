@@ -25,11 +25,14 @@ function CourtsPageInner({ params }: { params: Promise<{ locale: string; state: 
   const recentYear = stats.length > 0 ? Math.max(...stats.map((s) => s.year)) : 0;
   const latestStats = stats.filter((s) => s.year === recentYear);
 
-  const totalFiled = latestStats.reduce((s, c) => s + c.filed, 0);
-  const totalPending = latestStats.reduce((s, c) => s + c.pending, 0);
-  const totalDisposed = latestStats.reduce((s, c) => s + c.disposed, 0);
+  const totalFiled = latestStats.reduce((s, c) => s + (c.filed ?? 0), 0);
+  const totalPending = latestStats.reduce((s, c) => s + (c.pending ?? 0), 0);
+  const totalDisposed = latestStats.reduce((s, c) => s + (c.disposed ?? 0), 0);
   const pendingPct = (totalFiled + totalPending) > 0 ? (totalPending / (totalFiled + totalPending)) * 100 : 0;
-  const avgDays = latestStats.length > 0 ? latestStats.reduce((s, c) => s + c.avgDays, 0) / latestStats.length : 0;
+  const avgDaysStats = latestStats.filter((c) => c.avgDays != null);
+  const avgDays = avgDaysStats.length > 0
+    ? avgDaysStats.reduce((s, c) => s + (c.avgDays ?? 0), 0) / avgDaysStats.length
+    : 0;
 
   const chartData = latestStats.map((c) => ({
     court: c.courtName.slice(0, 14),
@@ -100,10 +103,10 @@ function CourtsPageInner({ params }: { params: Promise<{ locale: string; state: 
                 rows={stats.map((c) => ({
                   year: c.year,
                   court: c.courtName,
-                  filed: c.filed.toLocaleString("en-IN"),
-                  disposed: c.disposed.toLocaleString("en-IN"),
-                  pending: c.pending.toLocaleString("en-IN"),
-                  days: c.avgDays.toFixed(0),
+                  filed: (c.filed ?? 0).toLocaleString("en-IN"),
+                  disposed: (c.disposed ?? 0).toLocaleString("en-IN"),
+                  pending: (c.pending ?? 0).toLocaleString("en-IN"),
+                  days: c.avgDays != null ? c.avgDays.toFixed(0) : "—",
                 }))}
               />
             </>

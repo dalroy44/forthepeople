@@ -9,6 +9,7 @@
  */
 
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma";
 
 export type UpdateSource = "admin_edit" | "scraper" | "cron" | "api" | "ai_bot";
 export type UpdateAction = "create" | "update" | "delete";
@@ -26,6 +27,8 @@ export interface UpdateLogInput {
   districtName?: string;
   moduleName?: string;
   description?: string;
+  recordCount?: number;
+  details?: unknown;
 }
 
 function stringify(v: unknown): string | undefined {
@@ -56,6 +59,11 @@ export async function logUpdate(input: UpdateLogInput): Promise<void> {
         districtName: input.districtName ?? null,
         moduleName: input.moduleName ?? null,
         description: input.description ?? null,
+        recordCount: input.recordCount ?? null,
+        details:
+          input.details === undefined || input.details === null
+            ? Prisma.JsonNull
+            : (input.details as Prisma.InputJsonValue),
       },
     });
   } catch (err) {

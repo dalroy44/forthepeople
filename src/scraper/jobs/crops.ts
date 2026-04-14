@@ -10,6 +10,7 @@
 // ═══════════════════════════════════════════════════════════
 import { prisma } from "@/lib/db";
 import { JobContext, ScraperResult } from "../types";
+import { logUpdate } from "@/lib/update-log";
 
 const API_KEY = process.env.DATA_GOV_API_KEY;
 const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
@@ -110,7 +111,25 @@ export async function scrapeCrops(ctx: JobContext): Promise<ScraperResult> {
       await prisma.cropPrice.deleteMany({ where: { id: { in: old.map((r) => r.id) } } });
     }
 
-    ctx.log(`Crops: ${newCount} new records from ${records.length} fetched`);
+    const summary = `Crop prices: ${newCount} new records from ${records.length} fetched`;
+    ctx.log(summary);
+
+    if (newCount > 0) {
+      await logUpdate({
+        source: "scraper",
+        actorLabel: "cron",
+        tableName: "CropPrice",
+        recordId: `${ctx.districtId}:${Date.now()}`,
+        action: "create",
+        districtId: ctx.districtId,
+        districtName: ctx.districtName,
+        moduleName: "crops",
+        description: summary,
+        recordCount: newCount,
+        details: { fetched: records.length, inserted: newCount },
+      });
+    }
+
     return { success: true, recordsNew: newCount, recordsUpdated: 0 };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
