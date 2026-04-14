@@ -27,6 +27,7 @@ import { DistrictHealthScoreCard } from "@/components/district/DistrictHealthSco
 import DistrictSponsorBanner from "@/components/common/DistrictSponsorBanner";
 import { getStateConfig } from "@/lib/constants/state-config";
 import DistrictHeroIllustration from "@/components/district/DistrictHeroIllustration";
+import InfraSnippet from "@/components/district/InfraSnippet";
 import type { DistrictBadge } from "@/lib/constants/districts";
 
 interface Props {
@@ -333,6 +334,9 @@ export default function OverviewClient({ locale, stateSlug, districtSlug, stateN
             <StatCard label="Schools" value={overview?.data?._count?.schools?.toString() ?? "—"} icon={BarChart3} />
           </div>
         </div>
+
+        {/* ── Infrastructure At a Glance — auto-hides if 0 projects ── */}
+        <InfraSnippet district={districtSlug} state={stateSlug} base={base} />
 
         {/* ── Leadership Strip ─────────────────────────── */}
         {!leadersLoading && topLeaders.length > 0 && (

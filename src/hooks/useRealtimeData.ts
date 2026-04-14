@@ -198,6 +198,7 @@ export interface InfraProject {
   source?: string | null;
   // News-driven fields
   shortName?: string | null;
+  description?: string | null;
   scope?: string | null;
   announcedBy?: string | null;
   announcedByRole?: string | null;

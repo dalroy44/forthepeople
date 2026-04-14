@@ -9,11 +9,11 @@
 
 "use client";
 import ModuleErrorBoundary from "@/components/common/ModuleErrorBoundary";
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ComponentType } from "react";
 import {
-  HardHat, AlertTriangle, ExternalLink, ChevronDown, ChevronUp, Info, Sparkles,
+  HardHat, AlertTriangle, ExternalLink, Info, Sparkles, X,
   Route, Train, TramFront, Landmark, Droplets, Waves, Building2, Zap, Heart,
   GraduationCap, Trophy, Plane, Anchor, TreePine, TrafficCone, Leaf, Factory,
 } from "lucide-react";
@@ -403,6 +403,122 @@ function PeopleRow({ p }: { p: InfraProject }) {
   );
 }
 
+function TimelineModal({ p, onClose }: { p: InfraProject; onClose: () => void }) {
+  const updates = p.updates ?? [];
+  const Icon = categoryIcon(p.category);
+
+  // ESC closes the modal; lock body scroll while open
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Timeline for ${p.name}`}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed", inset: 0,
+        background: "rgba(15, 23, 42, 0.55)",
+        zIndex: 1000,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 16,
+      }}
+    >
+      <div
+        style={{
+          background: "#FFF",
+          borderRadius: 14,
+          width: "100%",
+          maxWidth: 700,
+          maxHeight: "calc(100vh - 32px)",
+          display: "flex", flexDirection: "column",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+            gap: 10, padding: "14px 18px",
+            borderBottom: "1px solid #F0F0EC",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
+            <Icon size={18} style={{ color: "#2563EB", flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", lineHeight: 1.3 }}>{p.name}</div>
+              <div style={{ fontSize: 11, color: "#6B7280" }}>
+                {normalizeCategory(p.category)}
+                {p.executingAgency && <> · Executing: {p.executingAgency}</>}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close timeline"
+            style={{
+              background: "none", border: "none", padding: 4, color: "#6B6B6B",
+              cursor: "pointer", display: "flex", alignItems: "center",
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{ overflowY: "auto", padding: "14px 18px" }}>
+          {p.description && (
+            <div
+              style={{
+                fontSize: 13, color: "#374151", lineHeight: 1.55,
+                background: "#FAFAF8", border: "1px solid #F0F0EC", borderRadius: 10,
+                padding: "10px 12px", marginBottom: 14,
+              }}
+            >
+              {p.description}
+            </div>
+          )}
+
+          {updates.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {updates.map((u) => <TimelineEntry key={u.id} u={u} />)}
+            </div>
+          ) : (
+            <div
+              style={{
+                padding: "14px 16px", background: "#F9FAFB",
+                border: "1px dashed #E8E8E4", borderRadius: 10,
+                ...AWAIT_STYLE, fontSize: 12,
+              }}
+            >
+              No timeline entries yet — updates appear here as news covers this project.
+            </div>
+          )}
+
+          <div style={{ marginTop: 14 }}>
+            <PrecomputedAnalysis projectId={p.id} />
+          </div>
+
+          <div style={{ marginTop: 12, fontSize: 10, color: "#9B9B9B", lineHeight: 1.5 }}>
+            Data sourced from news articles. Not independently verified. Contact{" "}
+            {p.executingAgency ?? "the executing agency"} for official status.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProjectCard({ p }: { p: InfraProject }) {
   const [open, setOpen] = useState(false);
   const ss = statusStyle(p.status);
@@ -431,6 +547,18 @@ function ProjectCard({ p }: { p: InfraProject }) {
             <Icon size={18} style={{ color: "#2563EB", flexShrink: 0 }} />
             <span>{p.name}</span>
           </div>
+          {p.description && (
+            <div
+              style={{
+                fontSize: 12, color: "#6B6B6B", lineHeight: 1.45, marginBottom: 6,
+                display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2,
+                overflow: "hidden", textOverflow: "ellipsis",
+              }}
+              title={p.description}
+            >
+              {p.description}
+            </div>
+          )}
           <div style={{ fontSize: 11, color: "#6B7280", display: "flex", gap: 8, flexWrap: "wrap" }}>
             <span>{normalCategory}</span>
             {p.executingAgency && <><span>·</span><span>Executing: {p.executingAgency}</span></>}
@@ -539,9 +667,9 @@ function ProjectCard({ p }: { p: InfraProject }) {
         }
       </div>
 
-      {/* Timeline toggle — ALWAYS shown */}
+      {/* Timeline modal trigger — ALWAYS shown */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(true)}
         style={{
           display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px",
           background: updates.length > 0 ? "#EFF6FF" : "#F9FAFB",
@@ -550,33 +678,14 @@ function ProjectCard({ p }: { p: InfraProject }) {
           borderRadius: 8, fontSize: 12, fontWeight: 600,
           cursor: "pointer", alignSelf: "flex-start",
         }}
-        aria-expanded={open}
+        aria-haspopup="dialog"
       >
-        {open
-          ? <>Hide Timeline <ChevronUp size={13} /></>
-          : updates.length > 0
-            ? <>View Full Timeline ({updates.length}) <ChevronDown size={13} /></>
-            : <>Timeline (empty) <ChevronDown size={13} /></>}
+        {updates.length > 0
+          ? <>View Timeline ({updates.length}) →</>
+          : <>Timeline (empty) →</>}
       </button>
 
-      {open && (
-        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 0 }}>
-          {updates.length > 0 ? (
-            updates.map((u) => <TimelineEntry key={u.id} u={u} />)
-          ) : (
-            <div style={{ padding: "14px 16px", background: "#F9FAFB", border: "1px dashed #E8E8E4", borderRadius: 10, ...AWAIT_STYLE, fontSize: 12 }}>
-              Timeline: Updates will appear as news covers this project.
-            </div>
-          )}
-          <div style={{ marginTop: 12 }}>
-            <PrecomputedAnalysis projectId={p.id} />
-          </div>
-          <div style={{ marginTop: 10, fontSize: 10, color: "#9B9B9B", lineHeight: 1.5 }}>
-            Data sourced from news articles. Not independently verified. Contact
-            {" "}{p.executingAgency ?? "the executing agency"} for official status.
-          </div>
-        </div>
-      )}
+      {open && <TimelineModal p={p} onClose={() => setOpen(false)} />}
 
       {/* Card footer: last updated + source */}
       <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #F0F0EC", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "#9CA3AF" }}>

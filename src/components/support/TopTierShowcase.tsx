@@ -10,17 +10,22 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Instagram, Linkedin, Github, Twitter, ExternalLink } from "lucide-react";
 import { getContributorLabel } from "@/lib/contributor-label";
+import { normalizeSocialLink } from "@/lib/social-link";
 
 interface TopTierContributor {
   id: string;
   name: string;
   tier: string;
+  amount?: number | null;
   socialLink: string | null;
   socialPlatform: string | null;
   monthsActive: number;
   districtName: string | null;
   stateName: string | null;
 }
+
+const PLACEHOLDER_TARGET = 3; // hide placeholders once we have this many real names
+const PLACEHOLDER_AMOUNT = 9999;
 
 const SOCIAL_ICONS: Record<string, typeof Instagram> = {
   instagram: Instagram,
@@ -63,10 +68,19 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
     );
   }
 
-  const founders = contributors.filter((c) => c.tier === "founder");
-  const patrons = contributors.filter((c) => c.tier === "patron");
-  const ordered = [...founders, ...patrons];
-  const shouldScroll = ordered.length > 6;
+  // Sort all India-tier names by amount descending so the biggest contributor
+  // shows first. Tier strings (founder/patron) take priority labelling; anyone
+  // ≥ ₹9,999 lands here regardless thanks to the amount-based API filter.
+  const ordered = [...contributors].sort((a, b) => {
+    const av = a.amount ?? (a.tier === "founder" ? Number.MAX_SAFE_INTEGER : 0);
+    const bv = b.amount ?? (b.tier === "founder" ? Number.MAX_SAFE_INTEGER : 0);
+    return bv - av;
+  });
+
+  // Show up to 2 "Your name here" slots until we have 3+ real contributors.
+  const placeholderSlots = ordered.length >= PLACEHOLDER_TARGET ? 0 : Math.min(2, PLACEHOLDER_TARGET - ordered.length);
+
+  const shouldScroll = ordered.length + placeholderSlots > 6;
   // Duplicate the list for seamless CSS loop if scrolling.
   const rendered = shouldScroll ? [...ordered, ...ordered] : ordered;
 
@@ -148,7 +162,14 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
               }}
             >
               {rendered.map((c, i) => (
-                <ContributorChip key={`${c.id}-${i}`} c={c} emoji={c.tier === "founder" ? "👑" : "🌟"} />
+                <ContributorChip
+                  key={`${c.id}-${i}`}
+                  c={c}
+                  emoji={c.tier === "founder" || (c.amount ?? 0) >= 50000 ? "👑" : "🌟"}
+                />
+              ))}
+              {Array.from({ length: placeholderSlots }).map((_, i) => (
+                <PlaceholderChip key={`ph-${i}`} locale={locale} />
               ))}
             </div>
           </div>
@@ -176,7 +197,9 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
 }
 
 function ContributorChip({ c, emoji }: { c: TopTierContributor; emoji: string }) {
-  const SocialIcon = c.socialPlatform ? SOCIAL_ICONS[c.socialPlatform] : null;
+  const safeLink = normalizeSocialLink(c.socialLink);
+  const SocialIcon =
+    (c.socialPlatform ? SOCIAL_ICONS[c.socialPlatform] : null) ?? (safeLink ? ExternalLink : null);
   const label = getContributorLabel(c.tier, c.districtName, c.stateName);
 
   const content = (
@@ -202,9 +225,9 @@ function ContributorChip({ c, emoji }: { c: TopTierContributor; emoji: string })
         scrollSnapAlign: "start",
       }}
     >
-      {c.socialLink ? (
+      {safeLink ? (
         <a
-          href={c.socialLink}
+          href={safeLink}
           target="_blank"
           rel="noopener noreferrer"
           style={{ display: "inline-flex", alignItems: "center", gap: 5, textDecoration: "none", color: "inherit" }}
@@ -215,5 +238,33 @@ function ContributorChip({ c, emoji }: { c: TopTierContributor; emoji: string })
         <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>{content}</div>
       )}
     </div>
+  );
+}
+
+function PlaceholderChip({ locale }: { locale: string }) {
+  return (
+    <Link
+      href={`/${locale}/support?tier=patron`}
+      title="Become an All-India Patron — ₹9,999/mo"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        padding: "4px 10px",
+        background: "rgba(255,255,255,0.55)",
+        border: "1px dashed #FDE68A",
+        borderRadius: 999,
+        flexShrink: 0,
+        textDecoration: "none",
+        color: "#92400E",
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span style={{ fontSize: 11 }}>🌟</span>
+      <span style={{ fontSize: 12 }}>
+        Your name here — Support All India ₹{PLACEHOLDER_AMOUNT.toLocaleString("en-IN")}/mo →
+      </span>
+    </Link>
   );
 }

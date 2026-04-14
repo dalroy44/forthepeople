@@ -203,6 +203,7 @@ model InfraProject {
 
   // Classification + news tracking
   shortName           String?
+  description         String?     @db.Text  // 1-2 sentence citizen-focused summary
   scope               String?     @default("DISTRICT") // DISTRICT | STATE | NATIONAL
   sourceUrls          Json?
   lastNewsAt          DateTime?

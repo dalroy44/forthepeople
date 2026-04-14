@@ -51,6 +51,7 @@ export const CONTENT_MODULES: ModuleConfig[] = [
     editableFields: [
       "name",
       "shortName",
+      "description",
       "category",
       "status",
       "scope",

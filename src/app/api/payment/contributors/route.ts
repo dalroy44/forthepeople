@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { cacheGet, cacheSet } from "@/lib/cache";
 
-const CACHE_KEY = "ftp:contributors:v2";
+const CACHE_KEY = "ftp:contributors:v3"; // bump: now reads Supporter table
 const CACHE_TTL = 60; // 60 seconds
 
 export interface ContributorItem {
@@ -40,11 +40,14 @@ function anonymizeName(raw: string, isPublic: boolean): string {
   return `${first} ${lastInitial}.`;
 }
 
+// Aligned with VISIBILITY_THRESHOLD in /api/data/contributors so labels match
+// where a contributor actually appears.
 function tierLabelFor(amountRupees: number): string {
-  if (amountRupees < 200) return "☕ Chai Supporter";
-  if (amountRupees < 1000) return "🏛️ District Supporter";
-  if (amountRupees < 5000) return "🗺️ State Supporter";
-  return "🇮🇳 Patron";
+  if (amountRupees < 99) return "☕ Chai Supporter";
+  if (amountRupees < 1999) return "🏛️ District Supporter";
+  if (amountRupees < 9999) return "🗺️ State Supporter";
+  if (amountRupees < 50000) return "🌟 All-India Patron";
+  return "👑 Founding Builder";
 }
 
 function relativeTime(date: Date | null): string {
@@ -70,41 +73,56 @@ export async function GET() {
       return NextResponse.json(cached);
     }
 
-    const rows = await prisma.contribution.findMany({
-      where: { status: "paid" },
-      orderBy: { paidAt: "desc" },
-      take: 50,
-      select: {
-        name: true,
-        amount: true,
-        tier: true,
-        message: true,
-        isPublic: true,
-        paidAt: true,
-      },
-    });
+    // April 2026 — read from Supporter (single source of truth). Every
+    // Razorpay payment writes a Supporter row, plus admin can add manual
+    // donations. Reading Contribution alone missed the manual ones (e.g.
+    // Micah Alex's ₹50,000 founding contribution).
+    // Note: Supporter.amount is in RUPEES (not paise like Contribution).
+    const now = new Date();
+    const supporterFilter = {
+      status: "success",
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    };
 
-    const totals = await prisma.contribution.aggregate({
-      where: { status: "paid" },
-      _sum: { amount: true },
-      _count: { id: true },
-    });
+    const [rows, totals] = await Promise.all([
+      prisma.supporter.findMany({
+        where: supporterFilter,
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          name: true,
+          amount: true,
+          tier: true,
+          message: true,
+          isPublic: true,
+          createdAt: true,
+        },
+      }),
+      prisma.supporter.aggregate({
+        where: supporterFilter,
+        _sum: { amount: true },
+        _count: true,
+      }),
+    ]);
 
     const contributors: ContributorItem[] = rows.map((r) => {
-      const rupees = Math.floor(r.amount / 100);
+      const rupees = Math.floor(r.amount); // already rupees
       return {
         displayName: anonymizeName(r.name, r.isPublic),
         tierLabel: tierLabelFor(rupees),
         tier: r.tier,
         message: r.isPublic ? truncateMessage(r.message ?? null) : null,
-        timeAgo: relativeTime(r.paidAt ?? null),
+        timeAgo: relativeTime(r.createdAt ?? null),
       };
     });
 
+    const totalRupees = Math.floor(totals?._sum?.amount ?? 0);
+    const count = typeof totals?._count === "number" ? totals._count : 0;
+
     const result: ContributorsResponse = {
       contributors,
-      totalRupees: Math.floor((totals._sum.amount ?? 0) / 100),
-      count: totals._count.id,
+      totalRupees,
+      count,
     };
 
     await cacheSet(CACHE_KEY, result, CACHE_TTL);

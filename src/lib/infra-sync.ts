@@ -53,6 +53,7 @@ export interface KeyPerson {
 export interface InfraExtraction {
   projectName: string;
   shortName: string;
+  description: string | null;
   category: InfraCategory;
   updateType: InfraUpdateType;
   announcedBy: string | null;
@@ -143,6 +144,7 @@ Extract infrastructure project metadata. Return JSON shaped:
 {
   "projectName": "Full project name, e.g. 'Mumbai Coastal Road Phase 2'",
   "shortName": "Canonical short name, 2-4 words, e.g. 'Coastal Road'",
+  "description": "1-2 short factual sentences explaining what the project IS and what problem it solves for citizens. Skip if the article doesn't supply enough detail.",
   "category": "ROAD|METRO|RAIL|BRIDGE|FLYOVER|WATER|SEWAGE|HOUSING|PORT|AIRPORT|POWER|TELECOM|HOSPITAL|SCHOOL|OTHER",
   "updateType": "ANNOUNCEMENT|APPROVAL|TENDER|CONSTRUCTION_START|BUDGET_INCREASE|BUDGET_DECREASE|DELAY|STALL|PROGRESS_UPDATE|CONTROVERSY|COMPLETION|CANCELLATION|PHASE_COMPLETE|INAUGURATION|REVIEW",
   "announcedBy": "The person named in the article who announced/approved this, or null if only 'the government' is mentioned",
@@ -191,6 +193,9 @@ export async function extractInfraFromNews(
     const safe: InfraExtraction = {
       projectName: parsed.projectName.trim(),
       shortName: (parsed.shortName ?? parsed.projectName).toString().trim(),
+      description: typeof parsed.description === "string" && parsed.description.trim().length > 10
+        ? parsed.description.trim().slice(0, 400)
+        : null,
       category: (parsed.category as InfraCategory) ?? "OTHER",
       updateType: (parsed.updateType as InfraUpdateType) ?? "ANNOUNCEMENT",
       announcedBy: parsed.announcedBy ?? null,
@@ -213,11 +218,45 @@ export async function extractInfraFromNews(
       summary: parsed.summary ?? article.title,
       confidence: typeof parsed.confidence === "number" ? Math.min(1, Math.max(0, parsed.confidence)) : 0.5,
     };
-    return safe;
+    return applyScopeOverride(safe);
   } catch (err) {
     console.error("[infra-sync] extract failed:", err instanceof Error ? err.message : err);
     return null;
   }
+}
+
+// ── Rule-based scope override ──────────────────────────────
+// AI sometimes returns scope=STATE for a clearly city-level project
+// (e.g. "Bengaluru Metro"), which then fans out to every Karnataka
+// district. These rules force the correct scope from the project name
+// before the sync engine ever sees it.
+const NAMED_CITY_RX = /\b(bengaluru|bangalore|namma|mumbai|hyderabad|chennai|delhi|kolkata|lucknow|mysuru|mysore|mandya|pune|ahmedabad|surat|jaipur|nagpur|kanpur|thiruvananthapuram|kochi|bhubaneswar|patna|guwahati|chandigarh|coimbatore|indore|bhopal|vadodara|nashik|nagaland|gurgaon|gurugram|noida|ghaziabad)\b/i;
+const CITY_PROJECT_MARKER_RX = /\b(metro|airport|flyover|depot|station|municipal|bmc|ndmc|mcd|smart\s*city|outer\s*ring\s*road|peripheral\s*ring\s*road|inner\s*ring\s*road|orbital|sub-?urban\s*rail)\b/i;
+const STATE_HIGHWAY_RX = /\b(state\s*highway|sh-\d+|state\s*high\s*way)\b/i;
+const NATIONAL_RX = /\b(national\s*highway|nh-?\d+|bharatmala|sagarmala|pmgsy|bullet\s*train|vande\s*bharat|namo\s*bharat|rrts|udan)\b/i;
+
+function applyScopeOverride(extraction: InfraExtraction): InfraExtraction {
+  const name = extraction.projectName;
+  const namesTwo = (() => {
+    // Two named cities → it's a connecting/STATE scope (e.g. "Mumbai-Ahmedabad")
+    let count = 0;
+    let m: RegExpExecArray | null;
+    const rx = new RegExp(NAMED_CITY_RX.source, "gi");
+    while ((m = rx.exec(name)) && count < 3) count++;
+    return count >= 2;
+  })();
+
+  let next: InfraScope | null = null;
+  if (NATIONAL_RX.test(name)) next = "NATIONAL";
+  else if (namesTwo) next = "STATE";
+  else if (STATE_HIGHWAY_RX.test(name)) next = "STATE";
+  else if (NAMED_CITY_RX.test(name) && CITY_PROJECT_MARKER_RX.test(name)) next = "DISTRICT";
+
+  if (next && next !== extraction.scope) {
+    console.log(`[infra-sync] scope override: AI said ${extraction.scope} but "${name.slice(0, 60)}" forced to ${next}`);
+    return { ...extraction, scope: next };
+  }
+  return extraction;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -481,6 +520,7 @@ export async function syncInfraFromNews(
           districtId: t.id,
           name: extraction.projectName,
           shortName: extraction.shortName,
+          description: extraction.description,
           category: extraction.category,
           status: extraction.status,
           scope: extraction.scope,
@@ -569,6 +609,7 @@ export async function syncInfraFromNews(
       if (!project.party && extraction.party) patch.party = extraction.party;
       if (!project.executingAgency && extraction.executingAgency) patch.executingAgency = extraction.executingAgency;
       if (!project.shortName) patch.shortName = extraction.shortName;
+      if (!project.description && extraction.description) patch.description = extraction.description;
       if (!project.scope) patch.scope = extraction.scope;
 
       if (extraction.keyPeople.length > 0) {

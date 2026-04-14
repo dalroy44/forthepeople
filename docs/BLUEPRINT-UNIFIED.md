@@ -83,6 +83,40 @@
 #     stampede at station, train, platform, station, irctc.
 #     Crops keyword list unchanged.
 #
+# 2026-04-15 — Infra polish round 2 + contributor visibility overhaul:
+#   • Cross-contamination cleanup (scripts/fix-infra-cross-contamination.ts):
+#     20 mis-targeted InfraProject rows removed (mostly Bengaluru projects that
+#     had been fanned out to Mandya/Mysuru by AI scope=STATE inference).
+#     Hardened in code: applyScopeOverride() in infra-sync.ts now forces
+#     DISTRICT scope when the name carries a single city marker
+#     ("Bengaluru Metro", "Mumbai Coastal Road"), STATE for two-city names
+#     ("Mumbai-Ahmedabad"), NATIONAL for NH-/Bharatmala/Vande-Bharat patterns.
+#     A debug log line announces every override.
+#   • InfraProject +description (Text). Surfaces on cards (2-line clamp) and
+#     in the new Timeline modal. AI extractor prompt asks for it; sync code
+#     fills only when null. Admin Content Editor accepts it.
+#   • scripts/seed-infra-real-data.ts: every one of the 31 curated projects
+#     now ships with a 1-2 sentence citizen-focused description (route length,
+#     stations, time saved, target population). Re-run produced 30 updates,
+#     1 skipped (NICE Road already complete on every field).
+#   • Timeline UX: the inline accordion on each project card was replaced
+#     with a centred modal (max-width 700, ESC + backdrop click closes,
+#     body-scroll lock while open). Description shown in modal header.
+#     Pre-computed AI analysis still lives at the bottom of the modal.
+#   • Overview page: new InfraSnippet component renders right after the
+#     District Snapshot tile grid — totals + top-3 in-progress projects with
+#     mini progress bars + total tracked budget, links to /infrastructure.
+#     Hides itself entirely when the district has 0 projects.
+#   • Sidebar Backed-By: TopTierShowcase now sources from amount-based
+#     visibility (≥₹9,999 → national tier) and shows up to 2 placeholder
+#     "Your name here" slots until 3+ real names exist. Bare-domain social
+#     links normalised through normalizeSocialLink.
+#   • /api/payment/contributors switched its source-of-truth from
+#     Contribution (Razorpay-only, paise) to Supporter (all sources, rupees).
+#     Support page total now shows the real figure (₹59k+ including manual
+#     adds like Micah Alex's ₹50,000), not just Razorpay traffic. Cache key
+#     bumped to v3.
+#
 # 2026-04-14 — Infrastructure: news-driven tracker with timelines + AI analysis:
 #   • Schema (additive, prisma db push): InfraProject gains announcedBy/
 #     announcedByRole/party, executingAgency, keyPeople Json, originalBudget/
