@@ -80,7 +80,10 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
   // Show up to 2 "Your name here" slots until we have 3+ real contributors.
   const placeholderSlots = ordered.length >= PLACEHOLDER_TARGET ? 0 : Math.min(2, PLACEHOLDER_TARGET - ordered.length);
 
-  const shouldScroll = ordered.length + placeholderSlots > 6;
+  const totalChips = ordered.length + placeholderSlots;
+  // Always scroll when there is more than one chip — a single row layout on
+  // narrow viewports clips chips under `overflow: hidden`, truncating names.
+  const shouldScroll = totalChips > 1;
   // Duplicate the list for seamless CSS loop if scrolling.
   const rendered = shouldScroll ? [...ordered, ...ordered] : ordered;
 
@@ -100,7 +103,19 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
         }
         @media (max-width: 768px) {
           .ftp-ticker-track {
-            animation-duration: 45s;
+            animation-duration: 30s;
+          }
+          .top-tier-row {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 6px !important;
+          }
+          .top-tier-label,
+          .top-tier-cta {
+            text-align: center;
+          }
+          .top-tier-cta {
+            align-self: center;
           }
         }
         @media (prefers-reduced-motion: reduce) {
@@ -121,6 +136,7 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
         className="top-tier-showcase"
       >
         <div
+          className="top-tier-row"
           style={{
             maxWidth: 1200,
             margin: "0 auto",
@@ -131,6 +147,7 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
           }}
         >
           <div
+            className="top-tier-label"
             style={{
               fontSize: 11,
               fontWeight: 700,
@@ -176,6 +193,7 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
 
           <Link
             href={`/${locale}/support`}
+            className="top-tier-cta"
             style={{
               fontSize: 12,
               fontWeight: 600,
