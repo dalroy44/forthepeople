@@ -381,6 +381,11 @@ function truncate(text: string | null | undefined, max: number): string | null {
   return base + "…";
 }
 
+const ANNOUNCER_TOOLTIP =
+  "This attribution is based on news reports. It indicates who publicly announced this project, not who is responsible for its current status.";
+const PARTY_TOOLTIP =
+  "Party affiliation shown as reported in news media at the time of announcement.";
+
 function PeopleRow({ p }: { p: InfraProject }) {
   const keyPeople = (p.keyPeople ?? []).filter((k): k is NonNullable<typeof k> => !!k && !!k.name);
   const hasAnything = !!p.announcedBy || !!p.executingAgency || keyPeople.length > 0;
@@ -400,8 +405,25 @@ function PeopleRow({ p }: { p: InfraProject }) {
         👤{" "}
         {p.announcedBy ? (
           <>
-            <strong style={{ color: "#1A1A1A" }}>{p.announcedBy}</strong>
-            {p.party ? ` (${p.party})` : ""}
+            <span title={ANNOUNCER_TOOLTIP} style={{ cursor: "help" }}>
+              Announced by:{" "}
+              <strong style={{ color: "#1A1A1A" }}>{p.announcedBy}</strong>
+            </span>
+            {p.party ? (
+              <span title={PARTY_TOOLTIP} style={{ cursor: "help" }}>
+                {" "}({p.party})
+              </span>
+            ) : ""}
+            <span
+              aria-hidden
+              title={ANNOUNCER_TOOLTIP}
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                marginLeft: 4, width: 12, height: 12, borderRadius: "50%",
+                background: "#E5E7EB", color: "#6B7280", fontSize: 9, fontWeight: 700,
+                cursor: "help", verticalAlign: "middle",
+              }}
+            >i</span>
           </>
         ) : (
           <span style={{ color: "#9CA3AF", fontStyle: "italic" }}>Announcer pending</span>
@@ -604,6 +626,21 @@ function ProjectCard({ p }: { p: InfraProject }) {
         </span>
       </div>
 
+      {/* Per-card mini disclaimer for status classifications derived from news.
+          Only shown for STALLED / CANCELLED / DELAYED so the rest of the
+          cards stay clean. The note is italic, low-contrast, and clarifies
+          that the classification is news-derived, not official. */}
+      {(() => {
+        const s = normalizeStatus(p.status);
+        if (!["STALLED", "CANCELLED", "DELAYED"].includes(s)) return null;
+        return (
+          <div style={{ fontSize: 11, color: "#9B9B9B", fontStyle: "italic", marginBottom: 6, lineHeight: 1.4 }}>
+            Status derived from news reports.
+            {p.executingAgency ? <> Contact <span style={{ color: "#6B7280" }}>{p.executingAgency}</span> for official status.</> : null}
+          </div>
+        );
+      })()}
+
       {/* People — compact, no Awaiting placeholders per field */}
       <PeopleRow p={p} />
 
@@ -757,12 +794,29 @@ function ProjectCard({ p }: { p: InfraProject }) {
       </div>
 
       {open && <TimelineModal p={p} onClose={() => setOpen(false)} />}
+    </div>
+  );
+}
 
-      {/* Card footer: last updated + source */}
-      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #F0F0EC", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "#9CA3AF" }}>
-        <span>Last updated: {lastTs ? relativeTime(lastTs) : "—"}</span>
-        <span>Source: {sourceLabel}</span>
-      </div>
+function LegalFooter() {
+  return (
+    <div
+      role="note"
+      style={{
+        background: "#F9F9F7", border: "1px solid #E8E8E4", borderRadius: 8,
+        padding: 16, marginTop: 32,
+        fontSize: 12, color: "#4B5563", lineHeight: 1.6,
+      }}
+    >
+      <strong style={{ color: "#1A1A1A" }}>Disclaimer:</strong>{" "}
+      Infrastructure project data is compiled from publicly available news articles and government press releases under{" "}
+      <span style={{ color: "#1A1A1A" }}>Article 19(1)(a)</span> of the Indian Constitution and India&apos;s{" "}
+      <span style={{ color: "#1A1A1A" }}>Open Data Policy (NDSAP)</span>. Person and party attribution reflects public
+      announcements as reported in news media and does not constitute an assessment of performance or responsibility.
+      Project status classifications (Proposed, Under Construction, Delayed, Stalled, Completed, Cancelled) are derived
+      from news reports and may not reflect official status. For verified project information, contact the relevant
+      executing agency. ForThePeople.in is an independent citizen transparency initiative and is not affiliated with
+      any government body or political party.
     </div>
   );
 }
@@ -924,6 +978,8 @@ function InfrastructurePageInner({ params }: { params: Promise<{ locale: string;
       )}
 
       <ModuleNews district={district} state={state} locale={locale} module="infrastructure" />
+
+      <LegalFooter />
     </div>
   );
 }

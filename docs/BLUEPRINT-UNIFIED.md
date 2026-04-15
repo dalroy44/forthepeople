@@ -154,6 +154,52 @@
 #     adds like Micah Alex's ₹50,000), not just Razorpay traffic. Cache key
 #     bumped to v3.
 #
+# 2026-04-15 — Infrastructure: legal disclaimers + neutrality audit + Kolkata people:
+#   • New per-page LegalFooter on /infrastructure (below ModuleNews, above page
+#     padding): grey bordered box, font-size 12px, max-width matching cards.
+#     Cites Article 19(1)(a) + NDSAP, clarifies that person/party attribution
+#     reflects public news and is not a performance assessment, and notes that
+#     status classifications are derived from news (not official). Augments the
+#     existing top-of-page amber Data Transparency banner.
+#   • Per-card mini disclaimer for STALLED / CANCELLED / DELAYED projects: a
+#     low-contrast italic line directly above the People row reading "Status
+#     derived from news reports. Contact <executingAgency> for official status."
+#     (executingAgency clause omitted when null). Only renders for those three
+#     statuses so the rest of the cards stay clean.
+#   • PeopleRow: "👤 Announced by:" prefix added (was implicit), inline ⓘ tooltip
+#     on the announcer (CSS title) and a separate tooltip on party label:
+#       announcer  → "This attribution is based on news reports. It indicates
+#                    who publicly announced this project, not who is responsible
+#                    for its current status."
+#       party      → "Party affiliation shown as reported in news media at the
+#                    time of announcement."
+#     Person attribution is rendered SEPARATE from the status badge (status sits
+#     in card header top-right, person sits in its own row below the disclaimer).
+#   • verifyInfraExtraction VERIFY_SYSTEM prompt strengthened with explicit
+#     neutrality guard ("never use 'scam', 'loot', 'corrupt', 'waste'; never
+#     attribute blame"). Matches the existing extraction + analysis prompts.
+#   • Neutrality audit (codebase + DB): zero true judgmental hits. The 17 "waste"
+#     hits in the DB are all legitimate civic terms (waste-to-energy, solid-
+#     waste-management, wastewater) — not moral judgments.
+#   • Kolkata people fill (scripts/fill-kolkata-people.ts): 13 of 18 curated
+#     entries patched announcedBy/Role/Party (Mamata Banerjee, Firhad Hakim,
+#     Ashwini Vaishnaw, Sarbananda Sonowal, Jyotiraditya Scindia). 5 already
+#     complete. Kolkata people coverage 0 → 13.
+#   • Coverage table after all April 15 fills (9 active districts):
+#       Bengaluru Urban  157 · Chennai 18 · Hyderabad 21 · Kolkata 31 · Lucknow 10
+#       Mandya 24 · Mumbai 26 · Mysuru 72 · New Delhi 33 — all 9 cross-clean ✅
+#   • Duplicate card footer (legacy "Last updated/Source" pair) removed; the
+#     real footer with View Timeline link remains the single source.
+#
+# 2026-04-15 — Manual-research data fill: Mumbai+Chennai+Hyderabad+Delhi+
+#   Kolkata+Lucknow infrastructure (89 projects in fill-remaining-districts-
+#   infra.ts). Same fill-only semantics as fill-bengaluru — match by name +
+#   alts, never overwrite, mirror originalBudget→revisedBudget→budget, status
+#   upgrade only forward, InfraUpdate(MANUAL_RESEARCH) per filled row, CREATE
+#   fallback when no fuzzy match. Also globally deletes the 7 duplicate
+#   "Metro light and metro neo for Tier 2 cities" policy-noise rows across
+#   active districts. Result: 38 filled · 41 created · 9 already complete.
+#
 # 2026-04-14 — Infrastructure: news-driven tracker with timelines + AI analysis:
 #   • Schema (additive, prisma db push): InfraProject gains announcedBy/
 #     announcedByRole/party, executingAgency, keyPeople Json, originalBudget/

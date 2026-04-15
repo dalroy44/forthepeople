@@ -303,7 +303,9 @@ function applyScopeOverride(extraction: InfraExtraction): InfraExtraction {
 
 const VERIFY_SYSTEM =
   "You are a verifier for an infrastructure-tracking pipeline. Given an article and a prior extraction, " +
-  "flag anything that cannot be verified directly from the article text. Return ONLY JSON.";
+  "flag anything that cannot be verified directly from the article text. Return ONLY JSON. " +
+  "Be factually neutral: never use 'scam', 'loot', 'corrupt', 'waste' or any moral judgment. " +
+  "Never attribute blame to a person or party — only flag what the article does or does not state.";
 
 function buildVerifyPrompt(article: NewsArticleRef, extraction: InfraExtraction): string {
   return `Article: "${article.title}"
