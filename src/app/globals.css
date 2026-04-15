@@ -230,3 +230,29 @@ body {
   /* Crop toggle: min tap target */
   .crop-toggle button { min-height: 36px; min-width: 36px; }
 }
+
+/* ── Support page: animated profile ring ─────────────── */
+@keyframes profile-ring {
+  0%   { border-color: #2563EB; box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  50%  { border-color: #60A5FA; box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+  100% { border-color: #2563EB; box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+}
+.profile-ring {
+  animation: profile-ring 3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .profile-ring { animation: none; }
+}
+
+/* ── Support page: "Other ways to help" hover affordance ─ */
+.support-help-item {
+  transition: background-color 150ms, border-left-color 150ms, padding-left 150ms;
+}
+.support-help-item:hover {
+  background: #EFF6FF;
+  border-left-color: #2563EB !important;
+}
+.support-help-item:hover .support-help-arrow {
+  color: #2563EB !important;
+  transform: translateX(3px);
+}

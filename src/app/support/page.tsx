@@ -30,11 +30,12 @@ const SCALE_COSTS = [
 ];
 
 const COST_BREAKDOWN = [
-  { label: "Servers & Database (Vercel Pro + Neon + Railway)", pct: 35, color: "#2563EB" },
-  { label: "AI Analysis & Intelligence (Anthropic + Gemini API)", pct: 25, color: "#7C3AED" },
-  { label: "Data Collection Infrastructure (APIs + Processing)", pct: 20, color: "#16A34A" },
-  { label: "Development & Maintenance", pct: 10, color: "#F59E0B" },
-  { label: "Domain, CDN & Security", pct: 10, color: "#6B7280" },
+  { label: "Servers & Hosting (Vercel + Railway)", pct: 40, color: "#2563EB" },
+  { label: "AI Analysis & Intelligence (OpenRouter)", pct: 20, color: "#7C3AED" },
+  { label: "Data Collection & APIs", pct: 15, color: "#16A34A" },
+  { label: "Analytics & Monitoring (Plausible + Sentry)", pct: 10, color: "#F59E0B" },
+  { label: "Development & Expansion", pct: 10, color: "#EC4899" },
+  { label: "Domain & Security", pct: 5, color: "#6B7280" },
 ];
 
 export default function SupportPage() {
@@ -208,39 +209,50 @@ export default function SupportPage() {
             <img
               src="/jayanth-profile.jpg"
               alt="Jayanth M B — Founder, ForThePeople.in"
-              width={64}
-              height={64}
+              width={72}
+              height={72}
+              className="profile-ring"
               style={{
-                width: 64, height: 64, borderRadius: "50%",
-                objectFit: "cover", border: "3px solid #E8E8E4",
+                width: 72, height: 72, borderRadius: "50%",
+                objectFit: "cover", border: "3px solid #2563EB",
                 flexShrink: 0,
               }}
             />
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A1A1A", marginBottom: 4 }}>Jayanth M B</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A1A1A", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                Jayanth M B
+                <span aria-hidden="true" style={{ fontSize: 13 }}>🇮🇳</span>
+              </div>
               <div style={{ fontSize: 12, color: "#9B9B9B", marginBottom: 16 }}>
-                Entrepreneur from Mandya, Karnataka · 26 · Founder, ForThePeople.in
+                26 yr old · Entrepreneur from Mandya, Karnataka · Founder - ForThePeople.in
               </div>
               <p style={{ fontSize: 14, color: "#1A1A1A", lineHeight: 1.8, margin: 0 }}>
-                I&apos;m Jayanth, a 26-year-old entrepreneur from Mandya, Karnataka. I built
-                ForThePeople.in because I believe every Indian citizen has the right to see
-                exactly where their government&apos;s money goes, what projects are being built
-                in their district, who their elected representatives are, and what schemes
-                they&apos;re eligible for — without navigating 50 different government portals.
+                When I was preparing for civil services during engineering, I spent hours
+                trying to find basic government data about my own district — budgets,
+                infrastructure projects, scheme eligibility, crop prices. The information
+                existed, but it was scattered across dozens of portals, buried in PDFs, and
+                nearly impossible for an ordinary citizen to navigate.
                 <br /><br />
-                Today, the platform covers <strong>9 districts across 7 states</strong> with
-                29 live dashboards each — crop prices, dam levels, infrastructure projects,
-                school data, budgets, elections, and more. The goal is all 780 districts
-                across India.
+                That frustration stayed with me. Years later, running Pinnakle Media (PKJMB
+                Media PVT Limited), I finally built what should have existed all along —
+                ForThePeople.in. A platform that brings all of a district&apos;s government data
+                into one clean, accessible dashboard.
                 <br /><br />
-                This is <strong>not a startup</strong>. This is <strong>not for profit</strong>.
-                This is a citizen initiative under India&apos;s Open Data Policy (NDSAP).
-                Running this already costs <strong>more than ₹12 lakh a year</strong> — servers,
-                AI analysis, data infrastructure — and I fund it myself.
+                A single Instagram reel explaining the platform reached lakhs of people.
+                Citizens from across India started asking for their districts, sharing it with
+                families, telling me this was exactly what they needed.
                 <br /><br />
-                Every rupee you contribute goes directly to keeping the data live, expanding
-                to more districts, and building new modules. This is how I&apos;m building
-                India&apos;s civic data layer — one district at a time.
+                Today — <strong>9 districts across 7 states</strong>, 29 live dashboards each.
+                Infrastructure projects, elected representatives, crop prices, dam levels,
+                school data, budgets, government exams, and more. The goal: all 780 districts
+                in India.
+                <br /><br />
+                This is <strong>not a startup</strong>. Not for profit. A citizen initiative
+                under India&apos;s Open Data Policy (NDSAP). Running this costs
+                <strong> more than ₹12 lakh a year</strong> — and I fund it independently.
+                <br /><br />
+                Every rupee contributed keeps the data live, expands to more districts, and
+                builds new modules.
               </p>
             </div>
           </div>
@@ -332,12 +344,15 @@ export default function SupportPage() {
               { emoji: "📊", label: "Send district data", desc: "Know RTI documents or official reports? Share them", href: "/en/feedback", external: false },
             ].map((item) => (
               <a key={item.label} href={item.href} target={item.external ? "_blank" : undefined} rel={item.external ? "noopener noreferrer" : undefined}
-                className="support-help-item" style={{ display: "flex", alignItems: "flex-start", gap: 12, textDecoration: "none", padding: "8px 10px", borderRadius: 8 }}>
+                className="support-help-item" style={{ display: "flex", alignItems: "flex-start", gap: 12, textDecoration: "none", padding: "10px 12px", borderRadius: 8, borderLeft: "3px solid transparent", cursor: "pointer" }}>
                 <span style={{ fontSize: 20, flexShrink: 0 }}>{item.emoji}</span>
-                <div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{item.label}</div>
                   <div style={{ fontSize: 12, color: "#6B6B6B" }}>{item.desc}</div>
                 </div>
+                <span aria-hidden="true" className="support-help-arrow" style={{ fontSize: 16, color: "#9B9B9B", flexShrink: 0, transition: "transform 150ms, color 150ms" }}>
+                  {item.external ? "↗" : "→"}
+                </span>
               </a>
             ))}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "8px 10px" }}>
