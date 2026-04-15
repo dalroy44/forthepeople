@@ -13,6 +13,7 @@ import { Instagram, Linkedin, Github, Twitter, ExternalLink, Lock } from "lucide
 import { BADGE_COLORS } from "@/lib/badge-level";
 import { TIER_CONFIG } from "@/lib/constants/razorpay-plans";
 import { getContributorLabel } from "@/lib/contributor-label";
+import { normalizeSocialLink } from "@/lib/social-link";
 import BadgeExplainer from "@/components/common/BadgeExplainer";
 import ContributorGrowthChart from "@/components/common/ContributorGrowthChart";
 import { getTotalActiveDistrictCount } from "@/lib/constants/districts";
@@ -106,8 +107,8 @@ function ContributorCard({ c, rank, showAmount }: { c: Contributor; rank?: numbe
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{c.name}</span>
-          {SocialIcon && c.socialLink && (
-            <a href={c.socialLink} target="_blank" rel="noopener noreferrer" style={{ color: "#6B6B6B", lineHeight: 0 }}>
+          {SocialIcon && normalizeSocialLink(c.socialLink) && (
+            <a href={normalizeSocialLink(c.socialLink)!} target="_blank" rel="noopener noreferrer" style={{ color: "#6B6B6B", lineHeight: 0 }}>
               <SocialIcon size={14} />
             </a>
           )}

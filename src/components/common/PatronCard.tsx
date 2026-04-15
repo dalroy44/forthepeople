@@ -9,6 +9,7 @@
 import { Instagram, Linkedin, Github, Twitter, ExternalLink } from "lucide-react";
 import { BADGE_COLORS } from "@/lib/badge-level";
 import { getContributorLabel } from "@/lib/contributor-label";
+import { normalizeSocialLink } from "@/lib/social-link";
 
 interface Patron {
   id: string;
@@ -77,8 +78,8 @@ export default function PatronCard({ patron }: { patron: Patron }) {
             <span style={{ fontSize: isFounder ? 18 : 16, fontWeight: 700, color: "#1A1A1A" }}>
               {patron.name}
             </span>
-            {SocialIcon && patron.socialLink && (
-              <a href={patron.socialLink} target="_blank" rel="noopener noreferrer" style={{ color: "#92400E", lineHeight: 0 }}>
+            {SocialIcon && normalizeSocialLink(patron.socialLink) && (
+              <a href={normalizeSocialLink(patron.socialLink)!} target="_blank" rel="noopener noreferrer" style={{ color: "#92400E", lineHeight: 0 }}>
                 <SocialIcon size={16} />
               </a>
             )}

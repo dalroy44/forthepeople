@@ -6,14 +6,20 @@
  * when the input is missing one.
  */
 
+import { detectAndCleanSocialLink } from "./social-detect";
+
 export function normalizeSocialLink(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const trimmed = raw.trim();
   if (!trimmed) return null;
+  // Delegate to the richer cleaner so "@handle", bare usernames, and profile
+  // URLs all end up as valid absolute profile links. Old behaviour would turn
+  // "@iamv1n_" into "https://@iamv1n_" which browsers treat as a relative path.
+  const detected = detectAndCleanSocialLink(trimmed);
+  if (detected) return detected.cleanUrl;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  // Allow "//domain.com" → assume https
   if (trimmed.startsWith("//")) return `https:${trimmed}`;
-  return `https://${trimmed.replace(/^\/+/, "")}`;
+  return null;
 }
 
 /** Best-effort platform detection from a URL. */

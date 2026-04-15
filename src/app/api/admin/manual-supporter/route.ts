@@ -14,6 +14,7 @@ import { cacheSet } from "@/lib/cache";
 import { logAuditAuto } from "@/lib/audit-log";
 import { calculateOneTimeExpiry } from "@/lib/contribution-expiry";
 import { TIER_CONFIG } from "@/lib/constants/razorpay-plans";
+import { detectAndCleanSocialLink } from "@/lib/social-detect";
 
 const COOKIE = "ftp_admin_v1";
 
@@ -81,8 +82,15 @@ export async function POST(req: NextRequest) {
       message: body.message ?? null,
       districtId: body.districtId ?? null,
       stateId: body.stateId ?? null,
-      socialLink: body.socialLink ?? null,
-      socialPlatform: body.socialPlatform ?? null,
+      socialLink: (() => {
+        const raw = typeof body.socialLink === "string" ? body.socialLink.trim() : "";
+        return raw ? (detectAndCleanSocialLink(raw)?.cleanUrl ?? null) : null;
+      })(),
+      socialPlatform: (() => {
+        if (body.socialPlatform) return body.socialPlatform;
+        const raw = typeof body.socialLink === "string" ? body.socialLink.trim() : "";
+        return raw ? (detectAndCleanSocialLink(raw)?.platform ?? null) : null;
+      })(),
       badgeType,
       isPublic: body.isPublic === undefined ? true : Boolean(body.isPublic),
       isRecurring,

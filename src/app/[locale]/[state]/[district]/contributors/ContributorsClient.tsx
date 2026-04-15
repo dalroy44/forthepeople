@@ -14,6 +14,7 @@ import { Instagram, Linkedin, Github, Twitter, ExternalLink, X } from "lucide-re
 import { BADGE_COLORS } from "@/lib/badge-level";
 import { getContributorLabel } from "@/lib/contributor-label";
 import { formatExpiryLabel } from "@/lib/contribution-expiry";
+import { normalizeSocialLink } from "@/lib/social-link";
 import BadgeExplainer from "@/components/common/BadgeExplainer";
 import CorporateSponsorBanner from "@/components/common/CorporateSponsorBanner";
 
@@ -108,9 +109,9 @@ function ContributorCard({ c }: { c: Contributor }) {
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {c.socialLink ? (
+          {normalizeSocialLink(c.socialLink) ? (
             <a
-              href={c.socialLink}
+              href={normalizeSocialLink(c.socialLink)!}
               target="_blank"
               rel="noopener noreferrer"
               style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: 4 }}

@@ -13,6 +13,7 @@ import { Instagram, Linkedin, Github, Twitter, ExternalLink } from "lucide-react
 import { BADGE_COLORS } from "@/lib/badge-level";
 import { getContributorLabel } from "@/lib/contributor-label";
 import { TIER_CONFIG } from "@/lib/constants/razorpay-plans";
+import { normalizeSocialLink } from "@/lib/social-link";
 
 interface Sponsor {
   id: string;
@@ -94,9 +95,9 @@ function Chip({ s }: { s: Sponsor }) {
         flexShrink: 0,
       }}
     >
-      {s.socialLink ? (
+      {normalizeSocialLink(s.socialLink) ? (
         <a
-          href={s.socialLink}
+          href={normalizeSocialLink(s.socialLink)!}
           target="_blank"
           rel="noopener noreferrer"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none", color: "inherit" }}

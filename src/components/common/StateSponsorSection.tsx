@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Instagram, Linkedin, Github, Twitter, ExternalLink } from "lucide-react";
 import { BADGE_COLORS } from "@/lib/badge-level";
 import { getContributorLabel } from "@/lib/contributor-label";
+import { normalizeSocialLink } from "@/lib/social-link";
 
 interface StateSponsor {
   id: string;
@@ -82,8 +83,8 @@ function Chip({ s }: { s: StateSponsor }) {
         scrollSnapAlign: "start",
       }}
     >
-      {s.socialLink ? (
-        <a href={s.socialLink} target="_blank" rel="noopener noreferrer"
+      {normalizeSocialLink(s.socialLink) ? (
+        <a href={normalizeSocialLink(s.socialLink)!} target="_blank" rel="noopener noreferrer"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none", color: "inherit" }}>
           {inner}
         </a>

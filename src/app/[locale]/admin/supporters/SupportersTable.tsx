@@ -321,11 +321,14 @@ export default function SupportersTable({
                         {s.districtName ?? s.stateName ?? "—"}
                       </td>
                       <td style={{ padding: "8px 10px" }}>
-                        {s.socialLink ? (
-                          <a href={s.socialLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#2563EB", textDecoration: "none" }}>
-                            Link
-                          </a>
-                        ) : "—"}
+                        {(() => {
+                          const href = s.socialLink && s.socialLink.startsWith("http") ? s.socialLink : null;
+                          return href ? (
+                            <a href={href} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#2563EB", textDecoration: "none" }}>
+                              Link
+                            </a>
+                          ) : (s.socialLink ? <span style={{ fontSize: 11, color: "#DC2626" }} title="Raw text — edit to clean">{s.socialLink}</span> : "—");
+                        })()}
                       </td>
                       <td style={{ padding: "8px 10px", color: "#6B6B6B", whiteSpace: "nowrap", fontSize: 11 }}>{fmtDate(s.activatedAt)}</td>
                       <td style={{ padding: "8px 10px", color: "#6B6B6B", whiteSpace: "nowrap", fontSize: 11 }}>

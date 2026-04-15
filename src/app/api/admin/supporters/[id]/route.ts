@@ -11,7 +11,7 @@ import { prisma } from "@/lib/db";
 import { cacheSet } from "@/lib/cache";
 import type { Prisma } from "@/generated/prisma";
 import { logAuditAuto } from "@/lib/audit-log";
-import { normalizeSocialLink, detectSocialPlatform } from "@/lib/social-link";
+import { detectAndCleanSocialLink } from "@/lib/social-detect";
 import redis from "@/lib/redis";
 
 const COOKIE = "ftp_admin_v1";
@@ -84,14 +84,19 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
     }
   }
 
-  // socialLink: normalise (https:// prefix for bare domains), and if no
-  // platform was supplied, detect one from the URL host.
+  // socialLink: clean + detect — handles "@handle", bare usernames, post URLs,
+  // and generic domains into a canonical profile URL.
   if (body.socialLink !== undefined) {
-    const normalized = normalizeSocialLink(body.socialLink);
-    data.socialLink = normalized;
-    if (normalized && body.socialPlatform === undefined) {
-      const platform = detectSocialPlatform(normalized);
-      if (platform) data.socialPlatform = platform;
+    const raw = typeof body.socialLink === "string" ? body.socialLink.trim() : "";
+    if (!raw) {
+      data.socialLink = null;
+      if (body.socialPlatform === undefined) data.socialPlatform = null;
+    } else {
+      const detected = detectAndCleanSocialLink(raw);
+      data.socialLink = detected?.cleanUrl ?? null;
+      if (body.socialPlatform === undefined) {
+        data.socialPlatform = detected?.platform ?? null;
+      }
     }
   }
 

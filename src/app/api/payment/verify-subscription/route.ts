@@ -9,7 +9,7 @@ import crypto from "crypto";
 import prisma from "@/lib/db";
 import { cacheSet } from "@/lib/cache";
 import { TIER_CONFIG } from "@/lib/constants/razorpay-plans";
-import { detectSocialPlatform } from "@/lib/social-detect";
+import { detectAndCleanSocialLink } from "@/lib/social-detect";
 
 // All cache keys used by /api/data/contributors — must invalidate ALL on payment
 const CONTRIBUTOR_CACHE_KEYS = [
@@ -77,8 +77,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid signature" }, { status: 400 });
     }
 
-    // Detect social platform
-    const social = socialLink?.trim() ? detectSocialPlatform(socialLink.trim()) : null;
+    // Clean + detect social link: "@handle" → "https://instagram.com/handle",
+    // bare "foo.com" → "https://foo.com", noisy post URLs normalized, etc.
+    const social = socialLink?.trim() ? detectAndCleanSocialLink(socialLink.trim()) : null;
+    const cleanedSocialUrl = social?.cleanUrl ?? null;
 
     // Get badge type from tier config
     const tierConfig = TIER_CONFIG[tier];
@@ -102,7 +104,7 @@ export async function POST(req: NextRequest) {
         expiresAt: null,
         districtId: districtId || null,
         stateId: stateId || null,
-        socialLink: socialLink?.trim() || null,
+        socialLink: cleanedSocialUrl,
         socialPlatform: social?.platform ?? null,
         badgeType,
         message: message?.trim().slice(0, 100) || null,
@@ -122,7 +124,7 @@ export async function POST(req: NextRequest) {
         expiresAt: null,
         districtId: districtId || null,
         stateId: stateId || null,
-        socialLink: socialLink?.trim() || null,
+        socialLink: cleanedSocialUrl,
         socialPlatform: social?.platform ?? null,
         badgeType,
         badgeLevel: null,
