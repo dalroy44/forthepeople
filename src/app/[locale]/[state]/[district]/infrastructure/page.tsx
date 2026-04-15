@@ -607,42 +607,69 @@ function ProjectCard({ p }: { p: InfraProject }) {
       {/* People — compact, no Awaiting placeholders per field */}
       <PeopleRow p={p} />
 
-      {/* Budget — inline, one line, hidden when null */}
-      {(p.originalBudget != null || p.budget != null) && (
-        <div style={{ fontSize: 13, color: "#1A1A1A", marginBottom: 6, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
-          <span>💰 <strong>{formatINR(p.originalBudget ?? p.budget)}</strong></span>
-          {p.revisedBudget != null && p.revisedBudget !== p.originalBudget && (
-            <>
-              <span style={{ color: "#9B9B9B" }}>→</span>
-              <strong>{formatINR(p.revisedBudget)}</strong>
-            </>
-          )}
-          {hasBudgetOverrun && p.costOverrun != null && (
-            <span style={{ fontSize: 11, color: p.costOverrun > 0 ? "#B45309" : "#16A34A" }}>
-              ({p.costOverrun > 0 ? "+" : ""}{formatINR(Math.abs(p.costOverrun))}
-              {p.costOverrunPct != null ? ` / ${p.costOverrun > 0 ? "+" : ""}${p.costOverrunPct.toFixed(0)}%` : ""})
-            </span>
-          )}
-        </div>
-      )}
+      {/* Budget — always rendered so every card has the same rows */}
+      <div style={{ fontSize: 13, color: "#1A1A1A", marginBottom: 6, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+        {(p.originalBudget != null || p.budget != null) ? (
+          <>
+            <span>💰 <strong>{formatINR(p.originalBudget ?? p.budget)}</strong></span>
+            {p.revisedBudget != null && p.revisedBudget !== p.originalBudget && (
+              <>
+                <span style={{ color: "#9B9B9B" }}>→</span>
+                <strong>{formatINR(p.revisedBudget)}</strong>
+              </>
+            )}
+            {hasBudgetOverrun && p.costOverrun != null && (
+              <span style={{ fontSize: 11, color: p.costOverrun > 0 ? "#B45309" : "#16A34A" }}>
+                ({p.costOverrun > 0 ? "+" : ""}{formatINR(Math.abs(p.costOverrun))}
+                {p.costOverrunPct != null ? ` / ${p.costOverrun > 0 ? "+" : ""}${p.costOverrunPct.toFixed(0)}%` : ""})
+              </span>
+            )}
+          </>
+        ) : (
+          <span style={{ color: "#9CA3AF", fontStyle: "italic" }}>💰 Budget not disclosed</span>
+        )}
+      </div>
 
-      {/* Timeline dates — unchanged, already compact */}
-      {(p.actualStartDate || p.startDate || p.originalEndDate || p.expectedEnd || p.revisedEndDate || (isCancelled(p) && p.cancelledDate)) && (
-        <div style={{ fontSize: 12, color: "#4B5563", marginBottom: 6 }}>
-          {(p.actualStartDate || p.startDate) && (
-            <>📅 Started: <strong>{formatMonthYear(p.actualStartDate ?? p.startDate)}</strong></>
-          )}
-          {(p.originalEndDate ?? p.expectedEnd) && (
-            <> · Expected: <strong>{formatMonthYear(p.originalEndDate ?? p.expectedEnd)}</strong></>
-          )}
-          {p.revisedEndDate && (
-            <> · <span style={{ color: "#B45309" }}>Revised: {formatMonthYear(p.revisedEndDate)}{p.delayMonths ? ` (+${p.delayMonths}mo)` : ""}</span></>
-          )}
-          {isCancelled(p) && p.cancelledDate && (
-            <> · <span style={{ color: "#B91C1C" }}>Cancelled: {formatMonthYear(p.cancelledDate)}</span></>
-          )}
-        </div>
-      )}
+      {/* Timeline dates — always rendered.
+          Falls back through the project's lifecycle: construction start
+          → tender → approval → announcement. Label changes to match the
+          most advanced milestone reached so "Not started" projects show
+          their proposed/announced date instead of a dash. */}
+      <div style={{ fontSize: 12, color: "#4B5563", marginBottom: 6 }}>
+        {(() => {
+          const started = p.actualStartDate ?? p.startDate ?? null;
+          const fallbackLabel =
+            p.tenderDate ? "Tender issued"
+            : p.approvedDate ? "Approved"
+            : p.announcedDate ? "Announced"
+            : null;
+          const fallbackDate =
+            p.tenderDate ?? p.approvedDate ?? p.announcedDate ?? null;
+          const anchorLabel = started ? "Started" : fallbackLabel;
+          const anchorDate = started ?? fallbackDate;
+          const haveAnything =
+            anchorDate || p.originalEndDate || p.expectedEnd || p.revisedEndDate ||
+            (isCancelled(p) && p.cancelledDate);
+          if (!haveAnything) {
+            return <span style={{ color: "#9CA3AF", fontStyle: "italic" }}>📅 Timeline not announced</span>;
+          }
+          return (
+            <>
+              📅 {anchorLabel ?? "Not started"}
+              {anchorDate ? <>: <strong>{formatMonthYear(anchorDate)}</strong></> : ""}
+              {(p.originalEndDate ?? p.expectedEnd) && (
+                <> · Expected: <strong>{formatMonthYear(p.originalEndDate ?? p.expectedEnd)}</strong></>
+              )}
+              {p.revisedEndDate && (
+                <> · <span style={{ color: "#B45309" }}>Revised: {formatMonthYear(p.revisedEndDate)}{p.delayMonths ? ` (+${p.delayMonths}mo)` : ""}</span></>
+              )}
+              {isCancelled(p) && p.cancelledDate && (
+                <> · <span style={{ color: "#B91C1C" }}>Cancelled: {formatMonthYear(p.cancelledDate)}</span></>
+              )}
+            </>
+          );
+        })()}
+      </div>
 
       {/* Progress — always shown for non-cancelled projects.
           0% reads as "Not started" instead of an empty silent bar. */}
@@ -677,20 +704,32 @@ function ProjectCard({ p }: { p: InfraProject }) {
         </div>
       )}
 
-      {/* Latest news — compact single line */}
-      {latest && latest.newsUrl !== "admin-panel" && latest.newsUrl !== "seed-data" && latest.newsUrl !== "manual-research" && (
-        <div style={{ fontSize: 12, color: "#374151", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          <a
-            href={latest.newsUrl.startsWith("http") ? latest.newsUrl : `https://${latest.newsUrl}`}
-            target="_blank" rel="noopener noreferrer"
-            style={{ color: "#374151", textDecoration: "none" }}
-            title={latest.headline}
-          >
-            📰 {truncate(latest.headline, 60)}
-            {latest.newsSource && <span style={{ color: "#9B9B9B" }}> — {latest.newsSource}, {formatFullDate(latest.date)}</span>}
-          </a>
-        </div>
-      )}
+      {/* Latest news — always rendered for layout consistency. When the
+          only updates are from seed/manual/admin-edit, show an italic
+          placeholder instead of the internal ref; real news will replace
+          it automatically on the next news-cron run. */}
+      {(() => {
+        const isRealNews = latest && !["admin-panel", "seed-data", "manual-research", "ai-enrichment"].includes(latest.newsUrl);
+        return (
+          <div style={{ fontSize: 12, color: "#374151", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {isRealNews && latest ? (
+              <a
+                href={latest.newsUrl.startsWith("http") ? latest.newsUrl : `https://${latest.newsUrl}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{ color: "#374151", textDecoration: "none" }}
+                title={latest.headline}
+              >
+                📰 {truncate(latest.headline, 60)}
+                {latest.newsSource && <span style={{ color: "#9B9B9B" }}> — {latest.newsSource}, {formatFullDate(latest.date)}</span>}
+              </a>
+            ) : (
+              <span style={{ color: "#9CA3AF", fontStyle: "italic" }}>
+                📰 No news coverage yet — updates as articles are published
+              </span>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Footer: Last updated · Source · View Timeline (N) → */}
       <div
