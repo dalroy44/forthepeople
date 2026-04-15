@@ -132,25 +132,28 @@ model Village {
 // ═══ LEADERSHIP ═══════════════════════════════════════════
 
 model Leader {
-  id           String   @id @default(cuid())
-  districtId   String
-  district     District @relation(fields: [districtId], references: [id])
-  talukId      String?
-  name         String
-  nameLocal    String?
-  role         String
-  roleLocal    String?
-  tier         Int
-  party        String?
-  constituency String?
-  phone        String?
-  email        String?
-  since        String?
-  photoUrl     String?
-  photoLicense String?
-  source       String?
+  id             String    @id @default(cuid())
+  districtId     String
+  district       District  @relation(fields: [districtId], references: [id])
+  talukId        String?
+  name           String
+  nameLocal      String?
+  role           String
+  roleLocal      String?
+  tier           Int
+  party          String?
+  constituency   String?
+  phone          String?
+  email          String?
+  since          String?
+  photoUrl       String?
+  photoLicense   String?
+  source         String?
+  active         Boolean   @default(true)
+  lastVerifiedAt DateTime?
 
   @@index([districtId, tier])
+  @@index([districtId, active])
 }
 
 // ═══ INFRASTRUCTURE ═══════════════════════════════════════

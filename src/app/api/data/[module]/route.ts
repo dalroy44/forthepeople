@@ -102,28 +102,31 @@ async function fetchModule(
     // 2. LEADERS
     // ══════════════════════════════════════════════════
     case "leaders": {
-      // Use DISTINCT ON via raw query to deduplicate by name+role, keeping newest
+      // Use DISTINCT ON via raw query to deduplicate by name+role, keeping newest.
+      // Filters out rows explicitly marked inactive (e.g. replaced officeholders).
       const raw = await prisma.$queryRaw<{
         id: string; districtId: string; name: string; role: string; tier: number;
         party: string | null; constituency: string | null; since: string | null;
-        photoUrl: string | null;
+        photoUrl: string | null; source: string | null; lastVerifiedAt: Date | null;
+        active: boolean;
       }[]>`
         SELECT DISTINCT ON (LOWER("name"), LOWER("role"))
           id, "districtId", name, role, tier,
-          party, constituency, since, "photoUrl"
+          party, constituency, since, "photoUrl",
+          source, "lastVerifiedAt", active
         FROM "Leader"
-        WHERE "districtId" = ${did}
+        WHERE "districtId" = ${did} AND active = true
         ORDER BY LOWER("name"), LOWER("role"), id DESC
       `;
       const data = raw.map(r => ({
         ...r,
+        lastVerifiedAt: r.lastVerifiedAt ? r.lastVerifiedAt.toISOString() : null,
         talukId: null,
         nameLocal: null,
         roleLocal: null,
         phone: null,
         email: null,
         photoLicense: null,
-        source: null,
       }));
       return { data, meta };
     }

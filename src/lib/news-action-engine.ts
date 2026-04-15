@@ -267,26 +267,46 @@ export async function executeNewsAction(
         if (data.personName && data.role) {
           const name = (data.personName as string).trim();
           const role = (data.role as string).trim();
-          // Skip duplicates: check if this name+role combo already exists for this district
+          const tier = (data.tier as number) ?? 3;
+          const party = (data.party as string) ?? null;
+
+          // Skip duplicates: check if this name+role combo already exists for this district.
           const existing = await prisma.leader.findFirst({
             where: { districtId, name, role },
           });
-          if (!existing) {
-            await prisma.leader.create({
-              data: {
-                districtId,
-                name,
-                role,
-                tier: (data.tier as number) ?? 3,
-                party: (data.party as string) ?? null,
-                since: new Date().getFullYear().toString(),
-                source: articleUrl,
-              },
+          if (existing) {
+            // Bump verification timestamp so the page shows a fresh date.
+            await prisma.leader.update({
+              where: { id: existing.id },
+              data: { lastVerifiedAt: new Date(), active: true },
             });
-            console.log(`[NewsAction] ✅ Added Leader: ${name} as ${role}`);
-          } else {
-            console.log(`[NewsAction] ⏭️  Skipped duplicate Leader: ${name} as ${role}`);
+            console.log(`[NewsAction] ⏭️  Skipped duplicate Leader (refreshed lastVerifiedAt): ${name} as ${role}`);
+            break;
           }
+
+          // For unique-officeholder roles (CM, Governor, Collector,
+          // Commissioner, Mayor, etc.), mark the previous holder of the
+          // SAME role inactive — never delete, so we preserve history.
+          const UNIQUE_ROLE_RE = /^(chief minister|governor|lieutenant governor|deputy chief minister|chief secretary|district collector|deputy commissioner|district magistrate|mayor|commissioner of police|managing director|chairman|vice chairman|chief justice|principal sessions judge)/i;
+          if (UNIQUE_ROLE_RE.test(role)) {
+            const supersedeWhere = { districtId, role, active: true, NOT: { name } };
+            const superseded = await prisma.leader.findMany({ where: supersedeWhere, select: { id: true, name: true } });
+            if (superseded.length > 0) {
+              await prisma.leader.updateMany({ where: { id: { in: superseded.map((s) => s.id) } }, data: { active: false } });
+              console.log(`[NewsAction] 📜 Marked ${superseded.length} previous "${role}" holder(s) inactive: ${superseded.map((s) => s.name).join(", ")}`);
+            }
+          }
+
+          await prisma.leader.create({
+            data: {
+              districtId, name, role, tier, party,
+              since: new Date().getFullYear().toString(),
+              source: articleUrl,
+              lastVerifiedAt: new Date(),
+              active: true,
+            },
+          });
+          console.log(`[NewsAction] ✅ Added Leader: ${name} as ${role}`);
         }
         break;
       }

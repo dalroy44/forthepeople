@@ -28,6 +28,9 @@ export interface Leader {
   photoUrl?: string | null;
   tier: number;
   constituency?: string | null;
+  active?: boolean;
+  source?: string | null;
+  lastVerifiedAt?: string | null;
 }
 
 export interface BudgetEntry {

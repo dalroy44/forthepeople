@@ -8,12 +8,28 @@
 import ModuleErrorBoundary from "@/components/common/ModuleErrorBoundary";
 import { use, useState } from "react";
 import Image from "next/image";
-import { Users, Phone, Mail } from "lucide-react";
+import { Users, Phone, Mail, Info } from "lucide-react";
 import { useLeaders, useAIInsight } from "@/hooks/useRealtimeData";
 import { ModuleHeader, SectionLabel, LoadingShell, ErrorBlock, AIInsightBanner } from "@/components/district/ui";
 import AIInsightCard from "@/components/common/AIInsightCard";
 import DataSourceBanner from "@/components/common/DataSourceBanner";
 import { getModuleSources } from "@/lib/constants/state-config";
+
+function formatVerifiedDate(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  try { return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); } catch { return null; }
+}
+
+function leaderProvenance(l: { source?: string | null; lastVerifiedAt?: string | null }): string {
+  const verified = formatVerifiedDate(l.lastVerifiedAt);
+  const src = (l.source ?? "").toLowerCase();
+  if (src.startsWith("http")) return verified ? `Updated from news · Last verified: ${verified}` : "Updated from news";
+  if (src.includes("manual-research")) return verified ? `Manually researched · Last verified: ${verified}` : "Manually researched";
+  if (src.includes("seed") || src === "" || src === "manual" || !src) {
+    return verified ? `Added from seed data · Last verified: ${verified}` : "Added from seed data";
+  }
+  return verified ? `Last verified: ${verified}` : "Verification pending";
+}
 
 const TIER_LABELS: Record<number, string> = {
   1: "Parliament (MP)",
@@ -142,6 +158,22 @@ function LeadershipPageInner({
         />
       )}
       {(() => { const _src = getModuleSources("leaders", state); return <DataSourceBanner moduleName="leaders" sources={_src.sources} updateFrequency={_src.frequency} isLive={_src.isLive} />; })()}
+
+      <div
+        role="note"
+        style={{
+          display: "flex", alignItems: "flex-start", gap: 10,
+          background: "#EFF6FF", border: "1px solid #BFDBFE", color: "#1E40AF",
+          borderRadius: 8, padding: "10px 14px", marginBottom: 14,
+          fontSize: 12, lineHeight: 1.55,
+        }}
+      >
+        <Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+        <span>
+          Leadership data reflects the latest available information. Political positions and party affiliations change frequently. Verify current officeholders at the official district administration website.
+        </span>
+      </div>
+
       <AIInsightCard module="leaders" district={district} />
       {isLoading && <LoadingShell rows={4} />}
       {error && <ErrorBlock />}
@@ -232,12 +264,31 @@ function LeadershipPageInner({
                         )}
                       </div>
                     )}
+                    <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px dashed #F0F0EC", fontSize: 10, color: "#9B9B9B", fontStyle: "italic" }}>
+                      {leaderProvenance(l)}
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
         ))}
+
+      {leaders.length > 0 && (
+        <div
+          role="note"
+          style={{
+            background: "#F9F9F7", border: "1px solid #E8E8E4", borderRadius: 8,
+            padding: 16, marginTop: 24,
+            fontSize: 12, color: "#4B5563", lineHeight: 1.6,
+          }}
+        >
+          <strong style={{ color: "#1A1A1A" }}>Note on political affiliations:</strong>{" "}
+          Political party affiliations shown are as last reported and may not reflect current affiliations due to party
+          changes, cabinet reshuffles, or elections. Government officers (IAS, IPS) carry no party. ForThePeople.in does
+          not endorse or oppose any political party or individual.
+        </div>
+      )}
     </div>
   );
 }

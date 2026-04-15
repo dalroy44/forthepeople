@@ -154,6 +154,45 @@
 #     adds like Micah Alex's ₹50,000), not just Razorpay traffic. Cache key
 #     bumped to v3.
 #
+# 2026-04-15 — Leadership: data corrections + disclaimers + news pipeline + last verified:
+#   • Schema (additive, prisma db push): Leader gains active Boolean(default true)
+#     and lastVerifiedAt DateTime?. New @@index([districtId, active]).
+#   • scripts/fix-leadership-all-districts.ts (one-shot data correction):
+#       – DELETES factually wrong rows: Mandya "Kumaraswamy | Chief Minister | BJP"
+#         (HDK is JD(S), not BJP, and not CM); Bengaluru placeholder rows
+#         "Bengaluru leaders" and "Karnataka CM".
+#       – UPDATES Mandya HDK MP row to "Union Minister for Heavy Industries &
+#         Steel; MP, Mandya" with party=JD(S).
+#       – ADDS missing tier-1 leaders where certain (Apr 2026): Karnataka
+#         Siddaramaiah(CM)/Gehlot(Gov); national Modi(PM)/Murmu(President);
+#         per-state CMs for Maharashtra/TN/Telangana/UP/WB. Delhi CM left
+#         untouched (post-Feb-2025-election uncertainty per spec).
+#       – RENAMES role-as-name placeholders (e.g. "Commissioner of Police,
+#         Chennai") to "[Name Not Available]" — never fabricates a person.
+#       – Sets lastVerifiedAt=now() on every row touched (added/updated).
+#   • /api/data/leaders: now filters active=true and surfaces source +
+#     lastVerifiedAt fields; inactive (replaced) holders preserved in DB but
+#     hidden from the page.
+#   • Leadership page (/[locale]/[state]/[district]/leadership):
+#       – Top blue Info banner: "Leadership data reflects the latest available
+#         information. Political positions and party affiliations change
+#         frequently. Verify current officeholders at the official district
+#         administration website."
+#       – Per-card provenance footer: "Updated from news / Manually researched /
+#         Added from seed data · Last verified: <date>".
+#       – Bottom grey "Note on political affiliations" — affiliations are as
+#         last reported, IAS/IPS carry no party, no endorsement/opposition.
+#   • news-action-engine `leaders` case rewritten:
+#       – Bumps lastVerifiedAt+active=true on dedupe match.
+#       – For unique-officeholder roles (CM/Gov/Collector/Mayor/CP/MD/Chairman/
+#         CJ/etc.), marks previous holder of the SAME role inactive (never
+#         deletes — preserves history).
+#       – New rows always carry lastVerifiedAt + active=true.
+#   • Result: Mandya now correct (no Kumaraswamy-as-BJP-CM), all 9 districts
+#     have Modi+Murmu at tier-1, Karnataka districts share Siddaramaiah/Gehlot,
+#     95 role-as-name placeholders renamed, 3 wrong rows deleted, 20 new
+#     leaders added.
+#
 # 2026-04-15 — Infrastructure: comprehensive legal protection sweep:
 #   • LegalFooter rewritten as 6-paragraph "Legal Notice" — Article 19(1)(a)
 #     + NDSAP, person/party caveats (transparency-not-endorsement), status +
