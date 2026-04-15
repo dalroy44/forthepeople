@@ -21,6 +21,11 @@ import { prisma } from "./db";
 import { callAI } from "./ai-provider";
 import { cacheKey, cacheSet } from "./cache";
 import { logUpdate } from "./update-log";
+import {
+  detectDistrictFromName,
+  detectDistrictFromAgency,
+  allDistrictsMentionedInName,
+} from "./constants/infra-locations";
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -237,8 +242,41 @@ const NATIONAL_RX = /\b(national\s*highway|nh-?\d+|bharatmala|sagarmala|pmgsy|bu
 
 function applyScopeOverride(extraction: InfraExtraction): InfraExtraction {
   const name = extraction.projectName;
+
+  // Pass 1 — AREA mapping (from shared infra-locations constants).
+  // If the name references a single neighborhood/area that uniquely maps to
+  // one district, force scope=DISTRICT + districtNames=[that district] so the
+  // sync fan-out stays narrow.
+  const mentioned = allDistrictsMentionedInName(name);
+  if (mentioned.length === 1) {
+    const target = mentioned[0];
+    if (extraction.scope !== "DISTRICT" || !extraction.districtNames.includes(target)) {
+      console.log(`[infra-sync] scope override: "${name.slice(0, 60)}" → DISTRICT (area maps to ${target})`);
+      return { ...extraction, scope: "DISTRICT", districtNames: [target] };
+    }
+    return extraction;
+  }
+  // Area detected but maps to null (e.g. "Nagpur Metro Phase II") →
+  // returning "NATIONAL" lets the caller decide to drop it via verification
+  // gates; we also flag district=null so sync finds no target.
+  const areaNullHit = detectDistrictFromName(name);
+  if (areaNullHit === null) {
+    console.log(`[infra-sync] scope override: "${name.slice(0, 60)}" references a city not served — marked NATIONAL w/ empty districtNames`);
+    return { ...extraction, scope: "NATIONAL", districtNames: [] };
+  }
+
+  // Pass 2 — AGENCY mapping. BMRCL/CMRL/DMRC/… are city-locked, overriding
+  // the scope even if the project name doesn't mention the city.
+  if (extraction.executingAgency) {
+    const agencyDistrict = detectDistrictFromAgency(extraction.executingAgency);
+    if (agencyDistrict) {
+      console.log(`[infra-sync] scope override: agency "${extraction.executingAgency}" → DISTRICT ${agencyDistrict}`);
+      return { ...extraction, scope: "DISTRICT", districtNames: [agencyDistrict] };
+    }
+  }
+
+  // Pass 3 — the original regex rules (two cities → STATE, NH-/Vande Bharat → NATIONAL)
   const namesTwo = (() => {
-    // Two named cities → it's a connecting/STATE scope (e.g. "Mumbai-Ahmedabad")
     let count = 0;
     let m: RegExpExecArray | null;
     const rx = new RegExp(NAMED_CITY_RX.source, "gi");

@@ -83,6 +83,43 @@
 #     stampede at station, train, platform, station, irctc.
 #     Crops keyword list unchanged.
 #
+# 2026-04-15 — Deep cleanup + AI enrichment + location constants:
+#   • NEW src/lib/constants/infra-locations.ts — single source of truth for
+#     Indian city/neighborhood → district mapping AND city-locked agencies.
+#     Used by BOTH the runtime sync-time scope override and the offline
+#     cleanup script. Includes:
+#       – AREA_TO_DISTRICT map (~90 neighborhoods + 25 out-of-system cities
+#         mapped to null so references can be pruned)
+#       – AGENCY_TO_DISTRICT pattern list (BMRCL / CMRL / DMRC / MMRDA /
+#         UPMRC / HMDA / KMRC / NCRTC / L&T Metro Rail Hyderabad etc.)
+#       – detectDistrictFromName(), detectDistrictFromAgency(),
+#         allDistrictsMentionedInName()
+#   • scripts/fix-infra-deep-cleanup.ts: removes rows by THREE strategies.
+#       S1 area mismatch — e.g. "Kengeri Metro" in Mandya → dropped
+#       S2 agency mismatch — "BMRCL Outer Ring Road" in Mumbai → dropped
+#       S3 NATIONAL stub noise — scope=NATIONAL + no budget + no progress +
+#          no verification (typical policy-announcement leftover)
+#     Two-city connecting routes ("Mumbai-Ahmedabad Bullet Train",
+#     "Bengaluru-Mysuru Expressway") always preserved. Produced 27
+#     targeted deletes across 9 districts.
+#   • applyScopeOverride() in src/lib/infra-sync.ts rewritten to use the
+#     shared location constants FIRST — single-area names force
+#     scope=DISTRICT + districtNames=[that one district], blocking the
+#     fan-out that previously sprayed Bengaluru projects onto every
+#     Karnataka district. Cities not in our system return
+#     scope=NATIONAL with empty districtNames so the sync target list
+#     comes up empty and the row is quietly skipped.
+#   • scripts/fill-infra-missing-data.ts: Anthropic-backed
+#     (FTP_AI_PROVIDER=anthropic, purpose="insight" → Claude Haiku 4.5)
+#     fills missing announcedBy / party / executingAgency / description /
+#     category. Fill-only semantics (never overwrites concrete data).
+#     Each fill writes an InfraUpdate of updateType="AI_ENRICHMENT" so the
+#     timeline preserves provenance. 1s pace, --limit default 100.
+#   • NewsItem dedup pass: 42 title-prefix duplicates removed across 9
+#     districts (Mandya industrial-hub article was repeating 4-5x).
+#     Ongoing dedup still handled per-cron by the existing logic; this
+#     was a catch-up sweep for historical data.
+#
 # 2026-04-15 — Infra polish round 2 + contributor visibility overhaul:
 #   • Cross-contamination cleanup (scripts/fix-infra-cross-contamination.ts):
 #     20 mis-targeted InfraProject rows removed (mostly Bengaluru projects that
