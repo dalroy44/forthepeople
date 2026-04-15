@@ -205,34 +205,42 @@ export default function SupportPage() {
           }}
         >
           <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
-            <div
+            <img
+              src="/jayanth-profile.jpg"
+              alt="Jayanth M B — Founder, ForThePeople.in"
+              width={64}
+              height={64}
               style={{
-                width: 54, height: 54, borderRadius: "50%",
-                background: "#2563EB", color: "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 24, flexShrink: 0,
+                width: 64, height: 64, borderRadius: "50%",
+                objectFit: "cover", border: "3px solid #E8E8E4",
+                flexShrink: 0,
               }}
-            >
-              J
-            </div>
+            />
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#1A1A1A", marginBottom: 4 }}>Jayanth M B</div>
               <div style={{ fontSize: 12, color: "#9B9B9B", marginBottom: 16 }}>
-                Developer from Mandya, Karnataka · Creator, ForThePeople.in
+                Entrepreneur from Mandya, Karnataka · 26 · Founder, ForThePeople.in
               </div>
               <p style={{ fontSize: 14, color: "#1A1A1A", lineHeight: 1.8, margin: 0 }}>
-                &ldquo;I&apos;m a developer from Karnataka who believes government data should be free
-                and accessible to every citizen — not buried in PDF reports and broken portals.
-                I built ForThePeople.in entirely by myself: every data pipeline, every API, every dashboard,
-                every line of code.
+                I&apos;m Jayanth, a 26-year-old entrepreneur from Mandya, Karnataka. I built
+                ForThePeople.in because I believe every Indian citizen has the right to see
+                exactly where their government&apos;s money goes, what projects are being built
+                in their district, who their elected representatives are, and what schemes
+                they&apos;re eligible for — without navigating 50 different government portals.
                 <br /><br />
-                This is <strong>not a startup</strong>. This is <strong>not for profit</strong>. This is a
-                citizen initiative under India&apos;s Open Data Policy (NDSAP). Running this already costs
-                <strong> more than ₹12 lakh a year</strong> — and I cover it myself.
+                Today, the platform covers <strong>9 districts across 7 states</strong> with
+                29 live dashboards each — crop prices, dam levels, infrastructure projects,
+                school data, budgets, elections, and more. The goal is all 780 districts
+                across India.
                 <br /><br />
-                Every rupee you contribute goes directly to infrastructure — keeping the servers
-                running, the data fresh, and helping me expand to more districts faster.
-                This is my way of building India — one district at a time.&rdquo;
+                This is <strong>not a startup</strong>. This is <strong>not for profit</strong>.
+                This is a citizen initiative under India&apos;s Open Data Policy (NDSAP).
+                Running this already costs <strong>more than ₹12 lakh a year</strong> — servers,
+                AI analysis, data infrastructure — and I fund it myself.
+                <br /><br />
+                Every rupee you contribute goes directly to keeping the data live, expanding
+                to more districts, and building new modules. This is how I&apos;m building
+                India&apos;s civic data layer — one district at a time.
               </p>
             </div>
           </div>
