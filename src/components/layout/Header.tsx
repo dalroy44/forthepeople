@@ -870,7 +870,7 @@ function LanguageSelector({ locale, pathname }: { locale: string; pathname: stri
         }}
       >
         <Globe size={13} aria-hidden="true" />
-        <span>{currentLang.code === "en" ? "EN" : currentLang.nameLocal}</span>
+        <span className="hidden sm:inline">{currentLang.code === "en" ? "EN" : currentLang.nameLocal}</span>
       </button>
 
       {open && (
