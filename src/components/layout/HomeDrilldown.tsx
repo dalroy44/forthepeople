@@ -146,7 +146,7 @@ export default function HomeDrilldown({ locale }: HomeDrilldownProps) {
           </span>
         </div>
 
-        <div className="md:grid md:grid-cols-[60%_40%]" style={{ gap: 20, padding: "0 16px" }}>
+        <div className="md:grid md:grid-cols-[3fr_2fr]" style={{ gap: 20, padding: "0 16px" }}>
           {/* Map column */}
           <div>
             <div className="touch-pan-y md:touch-auto">
