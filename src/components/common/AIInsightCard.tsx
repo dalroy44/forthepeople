@@ -235,7 +235,11 @@ export default function AIInsightCard({ module, district }: AIInsightCardProps) 
           {insight.aiModel ? ` (${insight.aiModel})` : ""} · ForThePeople.in
         </span>
         <span style={{ fontSize: 10, color: "#9B9B9B" }}>
-          🕐 {timing ? `Analysis from ${timing.lastUpdated} · ${timing.nextRefresh}` : ""}
+          🕐 {timing
+              ? (timing.isStale
+                  ? timing.nextRefresh
+                  : `Analysis from ${timing.lastUpdated} · ${timing.nextRefresh}`)
+              : ""}
         </span>
       </div>
     </div>
