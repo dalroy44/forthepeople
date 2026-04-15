@@ -80,11 +80,11 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
   // Show up to 2 "Your name here" slots until we have 3+ real contributors.
   const placeholderSlots = ordered.length >= PLACEHOLDER_TARGET ? 0 : Math.min(2, PLACEHOLDER_TARGET - ordered.length);
 
-  const totalChips = ordered.length + placeholderSlots;
-  // Always scroll when there is more than one chip — a single row layout on
-  // narrow viewports clips chips under `overflow: hidden`, truncating names.
-  const shouldScroll = totalChips > 1;
-  // Duplicate the list for seamless CSS loop if scrolling.
+  // Only run the auto-scroll ticker when there are enough real contributors to
+  // justify the seamless-loop duplication. With fewer names, duplication makes
+  // the same name appear twice, which reads as a rendering bug.
+  const shouldScroll = ordered.length >= 3;
+  // Duplicate only when scrolling — the seamless CSS loop needs two copies.
   const rendered = shouldScroll ? [...ordered, ...ordered] : ordered;
 
   return (
@@ -101,6 +101,7 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
         .ftp-ticker-viewport:hover .ftp-ticker-track {
           animation-play-state: paused;
         }
+        .ftp-ticker-viewport::-webkit-scrollbar { display: none; }
         @media (max-width: 768px) {
           .ftp-ticker-track {
             animation-duration: 30s;
@@ -165,9 +166,11 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
             style={{
               display: "flex",
               flex: 1,
-              overflow: "hidden",
+              overflowX: shouldScroll ? "hidden" : "auto",
+              overflowY: "hidden",
               minWidth: 0,
               position: "relative",
+              scrollbarWidth: "none",
             }}
           >
             <div
@@ -175,7 +178,7 @@ export default function TopTierShowcase({ locale = "en" }: { locale?: string }) 
               style={{
                 display: "flex",
                 gap: 10,
-                width: shouldScroll ? "max-content" : "100%",
+                width: "max-content",
               }}
             >
               {rendered.map((c, i) => (
