@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       razorpay_signature,
       name,
       email,
+      phone,
       tier,
       amount: requestAmount,
       districtId,
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
       razorpay_signature: string;
       name: string;
       email?: string;
+      phone?: string;
       tier: string;
       amount?: number;
       districtId?: string;
@@ -50,6 +52,10 @@ export async function POST(req: NextRequest) {
       message?: string;
       isPublic?: boolean;
     };
+
+    // Normalise phone to 10-digit Indian number for DB storage.
+    const phoneDigits = (phone ?? "").replace(/\D/g, "").replace(/^91(?=\d{10}$)/, "");
+    const phoneToStore = phoneDigits.length === 10 ? phoneDigits : null;
 
     if (!razorpay_subscription_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 });
@@ -95,6 +101,7 @@ export async function POST(req: NextRequest) {
       update: {
         name: name.trim(),
         email: email?.trim() || null,
+        phone: phoneToStore,
         amount,
         tier,
         razorpaySubscriptionId: razorpay_subscription_id,
@@ -114,6 +121,7 @@ export async function POST(req: NextRequest) {
       create: {
         name: name.trim(),
         email: email?.trim() || null,
+        phone: phoneToStore,
         amount,
         tier,
         paymentId: razorpay_payment_id,

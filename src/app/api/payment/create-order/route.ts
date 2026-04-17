@@ -15,14 +15,17 @@ const ABSOLUTE_MAX = 500000;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { amount, tier, name, email, message, isPublic } = body as {
+    const { amount, tier, name, email, phone, message, isPublic } = body as {
       amount: number;
       tier: string;
       name: string;
       email?: string;
+      phone?: string;
       message?: string;
       isPublic: boolean;
     };
+    // Normalise phone — optional for one-time, but carry through to Razorpay notes.
+    const phoneDigits = (phone ?? "").replace(/\D/g, "").replace(/^91(?=\d{10}$)/, "");
 
     // Validate
     if (!name || name.trim().length === 0) {
@@ -76,6 +79,7 @@ export async function POST(req: NextRequest) {
         tier,
         platform: "forthepeople.in",
         contributionId: contribution.id,
+        ...(phoneDigits.length === 10 ? { phone: phoneDigits } : {}),
       },
     });
 

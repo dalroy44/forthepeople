@@ -6,6 +6,32 @@
 # Last updated: April 17, 2026
 # ═══════════════════════════════════════════════════════════
 #
+# 2026-04-17 — Support Layout + Mobile Nav + Razorpay Prefill + UPI Cap:    COMPLETE (local, not pushed)
+#   • /en/support container: maxWidth 860 → 1100 (matches admin pages).
+#     Tier cards + stats grids now show more columns on desktop; mobile
+#     stack unchanged.
+#   • Header GitHub icon: removed `hidden sm:flex` — icon now visible at
+#     all viewports including iPhone sizes. `flexShrink: 0` preserved.
+#   • Phone field added to SupportCheckout form:
+#       - Required for subscription tiers (UPI AutoPay / bank e-mandate)
+#       - Optional for one-time contributions
+#       - Validates 10-digit Indian number, strips +91 prefix
+#       - Auto-fills Razorpay checkout via `prefill.contact`
+#   • Razorpay subscription API (`/api/payment/create-subscription`):
+#       - Accepts + validates phone
+#       - Sends `customer_notify: 1` → Razorpay sends payment SMS + email
+#       - Sends `notify_info: { notify_email, notify_phone }`
+#       - Stores phone in `notes` for admin auditing
+#   • Razorpay one-time API (`/api/payment/create-order`): accepts optional phone,
+#     stores in order notes.
+#   • Verify-subscription writes `phone` to Supporter.phone column.
+#   • NPCI UPI AutoPay cap warning:
+#       - Inline banner shown when `tier.isMonthly && amount > 15000`
+#       - Affects Founder tier (₹50k/mo) — users told to use Card/Netbanking
+#       - No product-side restructure; warning-only for now
+#   • New doc: PAYMENT-DEBUG-REPORT.md (repo root) — full audit + manual
+#     Razorpay Dashboard checklist + post-deploy verification URLs.
+#
 # 2026-04-17 — Payment UX + Duplicate Cleanup + Score Disclaimer:    COMPLETE
 #   • District tier subscription fix: added requiresState: true to prevent
 #     broken submit flow. District selector now always visible with disabled

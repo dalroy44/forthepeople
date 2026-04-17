@@ -10,16 +10,27 @@ import { TIER_CONFIG } from "@/lib/constants/razorpay-plans";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { tier, amount, name, email, districtId, stateId, socialLink, message } = body as {
+    const { tier, amount, name, email, phone, districtId, stateId, socialLink, message } = body as {
       tier: string;
       amount: number;
       name: string;
       email?: string;
+      phone?: string;
       districtId?: string;
       stateId?: string;
       socialLink?: string;
       message?: string;
     };
+
+    // Validate phone (required for subscriptions — UPI AutoPay / e-mandate
+    // needs a verified contact). 10-digit Indian number, strip +91 prefix.
+    const phoneDigits = (phone ?? "").replace(/\D/g, "").replace(/^91(?=\d{10}$)/, "");
+    if (phoneDigits.length !== 10) {
+      return NextResponse.json(
+        { error: "Valid 10-digit phone number is required for subscriptions" },
+        { status: 400 }
+      );
+    }
 
     if (!name?.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -90,9 +101,15 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         plan_id: plan.id,
         total_count: 120, // up to 10 years
+        customer_notify: 1, // Razorpay sends payment confirmation SMS + email
+        notify_info: {
+          notify_email: email?.trim() || undefined,
+          notify_phone: `+91${phoneDigits}`,
+        },
         notes: {
           name: name.trim(),
           email: email?.trim() || "",
+          phone: phoneDigits,
           tier,
           amount: String(amount),
           districtId: districtId || "",

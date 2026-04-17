@@ -99,6 +99,7 @@ export default function SupportCheckout({ tier }: Props) {
   // Form fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [socialLink, setSocialLink] = useState("");
@@ -180,11 +181,18 @@ export default function SupportCheckout({ tier }: Props) {
   const districtRequired = !!tier.requiresDistrict;
   const stateRequired = !!tier.requiresState;
 
+  // Phone: digits only, 10-digit Indian number (or +91 prefix stripped).
+  // Required for subscription tiers (UPI AutoPay / bank e-mandate needs contact).
+  const phoneDigits = phone.replace(/\D/g, "").replace(/^91(?=\d{10}$)/, "");
+  const phoneValid = phoneDigits.length === 10;
+  const phoneRequired = !!tier.isMonthly;
+
   const canSubmit =
     name.trim() &&
     scriptReady &&
     (!districtRequired || selectedDistrict) &&
-    (!stateRequired || selectedState);
+    (!stateRequired || selectedState) &&
+    (!phoneRequired || phoneValid);
 
   async function handlePay() {
     if (!canSubmit) return;
@@ -201,6 +209,7 @@ export default function SupportCheckout({ tier }: Props) {
             amount, // user-chosen amount from +/- buttons
             name: name.trim(),
             email: email.trim() || undefined,
+            phone: phoneDigits || undefined,
             districtId: districtDbId || undefined,
             stateId: stateDbId || undefined,
             socialLink: socialLink.trim() || undefined,
@@ -216,7 +225,11 @@ export default function SupportCheckout({ tier }: Props) {
           subscription_id: subscriptionId,
           name: "ForThePeople.in",
           description: tier.label,
-          prefill: { name: name.trim(), email: email.trim() },
+          prefill: {
+            name: name.trim(),
+            email: email.trim(),
+            contact: phoneDigits ? `+91${phoneDigits}` : undefined,
+          },
           theme: { color: tier.accent },
           modal: {
             ondismiss: () => setStep("form"),
@@ -235,6 +248,7 @@ export default function SupportCheckout({ tier }: Props) {
                 razorpay_signature: response.razorpay_signature,
                 name: name.trim(),
                 email: email.trim() || undefined,
+                phone: phoneDigits || undefined,
                 tier: tier.tierKey,
                 amount,
                 districtId: districtDbId || undefined,
@@ -285,7 +299,11 @@ export default function SupportCheckout({ tier }: Props) {
           name: "ForThePeople.in",
           description: tier.label,
           order_id: orderId,
-          prefill: { name: name.trim(), email: email.trim() },
+          prefill: {
+            name: name.trim(),
+            email: email.trim(),
+            contact: phoneDigits ? `+91${phoneDigits}` : undefined,
+          },
           theme: { color: tier.accent },
           modal: {
             ondismiss: () => setStep("form"),
@@ -402,6 +420,58 @@ export default function SupportCheckout({ tier }: Props) {
             onChange={(e) => setEmail(e.target.value)}
             style={{ padding: "9px 12px", border: "1px solid #E8E8E4", borderRadius: 8, fontSize: 13, outline: "none", background: "#FAFAF8" }}
           />
+
+          {/* NPCI UPI AutoPay cap is ₹15,000 per debit. For higher subscription
+              amounts (Founder tier is ₹50k+), users must use card or netbanking. */}
+          {tier.isMonthly && amount > 15000 && (
+            <div
+              style={{
+                fontSize: 11,
+                color: "#92400E",
+                background: "#FFFBEB",
+                border: "1px solid #FDE68A",
+                borderRadius: 8,
+                padding: "8px 12px",
+                lineHeight: 1.55,
+              }}
+            >
+              <strong>Note:</strong> NPCI caps UPI AutoPay at ₹15,000 per debit.
+              For this amount, please use <strong>Card</strong> or <strong>Netbanking</strong>
+              at checkout. UPI will not work for recurring debits above ₹15,000.
+            </div>
+          )}
+
+          {/* Phone — required for subscriptions (UPI AutoPay / bank e-mandate),
+              optional for one-time contributions. Auto-fills Razorpay checkout. */}
+          <div style={{ position: "relative" }}>
+            <input
+              type="tel"
+              inputMode="numeric"
+              placeholder={phoneRequired ? "Phone (10-digit) *" : "Phone (optional — for payment receipt)"}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.slice(0, 14))}
+              style={{
+                width: "100%",
+                padding: "9px 12px",
+                border: `1px solid ${phoneRequired && phone && !phoneValid ? "#DC2626" : "#E8E8E4"}`,
+                borderRadius: 8,
+                fontSize: 13,
+                outline: "none",
+                background: "#FAFAF8",
+                boxSizing: "border-box",
+              }}
+            />
+            {phoneRequired && phone && !phoneValid && (
+              <div style={{ fontSize: 11, color: "#DC2626", marginTop: 4 }}>
+                Enter a valid 10-digit Indian mobile number.
+              </div>
+            )}
+            {phoneRequired && !phone && (
+              <div style={{ fontSize: 11, color: "#9B9B9B", marginTop: 4 }}>
+                Required for monthly subscriptions (UPI AutoPay / bank e-mandate).
+              </div>
+            )}
+          </div>
 
           {/* Social link */}
           <div style={{ fontSize: 12, fontWeight: 500, color: "#6B6B6B", marginTop: 2 }}>Social media link (optional)</div>
