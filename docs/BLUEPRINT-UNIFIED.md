@@ -3,8 +3,35 @@
 # SINGLE SOURCE OF TRUTH — Combines original + all addendums
 # Claude Code: Read this file at the start of EVERY session.
 # Generic for ANY Indian district. Pilots: Mandya, Mysuru, Bengaluru Urban (Karnataka).
-# Last updated: April 17, 2026
+# Last updated: April 19, 2026
 # ═══════════════════════════════════════════════════════════
+#
+# 2026-04-19 — Module 30: GOVERNMENT TENDERS (Karnataka pilot):    COMPLETE (local, not pushed)
+#   • First transparency-first module with legal-grade factual copy: tenders
+#     from 6 Karnataka portals (KPPP, CPPP, IREPS, defproc, BEL_NIC, HAL_TW)
+#     ingested via 4 reusable scraper engines — kppp-seam, nicgep (shared by
+#     CPPP + defproc + BEL), ireps, tenderwizard. All rate-limited 1 req/3s,
+#     honest UA, robots.txt-obeying, 3-retry exponential backoff on 403/429/503.
+#   • 14 new Prisma models. Synced via `prisma db push` (project convention).
+#   • Seed: 6 scraper configs, 31 authorities (BBMP/BDA/BESCOM/BWSSB/BMRCL/
+#     BMTC/MCC/MUDA/CNNL/MYSUGAR/HAL/BEL/BEML/ITI/DRDO/SWR etc.), 20 NIC
+#     categories, 10 education sections (EN; KN deferred), 12 stub tenders
+#     across Bengaluru/Mysuru/Mandya flagged pending-scraper-verification.
+#   • 6 API routes + 5 pages + 8 components. Every tender page renders
+#     TenderDisclaimer compact+full.
+#   • Red-flag taxonomy (src/lib/tenders/tender-redflags.ts): 7 flags — all
+#     SQL-based, never LLM. Every flag cites factual statement + rule
+#     reference (GFR 173 / KTPPA / CVC) + computed-value JSON.
+#   • AI enrichment (summary + eligibility + doc-checklist) via callAI()
+#     purpose='news-analysis' → free Tier 1. Daily $0.50 budget guard.
+#   • PII redactor runs on every extracted doc text (DPDP readiness).
+#   • Lint: scripts/lint-tender-copy.sh blocks suspicious/corrupt/dubious/
+#     cartel/irregular/fraudulent in rendered strings. Passing.
+#   • Docs: 29-Tenders-Module-Architecture / 30-Data-Sources-KA / 31-Legal-
+#     Framework / 32-API-Integrations. TENDERS_MODULE_REPORT.md at repo
+#     root captures phase-by-phase test pass + Neon quota caveat.
+#   • NOT deployed. Local-only. Railway scraper + Vercel cron wire-up is
+#     follow-up work.
 #
 # 2026-04-17 — Support Layout + Mobile Nav + Razorpay Prefill + UPI Cap:    COMPLETE (local, not pushed)
 #   • /en/support container: maxWidth 860 → 1100 (matches admin pages).

@@ -31,6 +31,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:tenders": "bash scripts/lint-tender-copy.sh",
     "db:push": "prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset && npx tsx prisma/seed.ts",
