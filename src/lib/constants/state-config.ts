@@ -18,6 +18,22 @@ export interface DataSourceEntry {
   status: "live" | "static";
 }
 
+export interface TenderPortalEntry {
+  code: string;       // 'KPPP' | 'CPPP' | ...
+  name: string;
+  url: string;
+  engine: "kppp-seam" | "nicgep" | "ireps" | "tenderwizard";
+  priority: number;
+  filterByDistrict?: string[]; // optional: only ingest tenders whose locationDistrict is in this list
+}
+
+export interface TenderTerminology {
+  tenderWord: string;
+  emdWord: string;
+  nitWord: string;
+  localLanguageLabels?: Record<string, string>;
+}
+
 export interface StateConfig {
   slug: string;
   name: string;
@@ -70,6 +86,10 @@ export interface StateConfig {
 
   // State-specific data sources
   dataSources: DataSourceEntry[];
+
+  // Government tender portals relevant to this state (Module 30 — Tenders)
+  tenderPortals?: TenderPortalEntry[];
+  tenderTerminology?: TenderTerminology;
 }
 
 // ── Karnataka ──────────────────────────────────────────────
@@ -111,6 +131,20 @@ const KARNATAKA: StateConfig = {
     { module: "Sugar Factories", source: "Karnataka Sugar Directorate", type: "Collected", frequency: "Seasonal", url: null, status: "static" },
     { module: "Rainfall", source: "Karnataka State Natural Disaster Monitoring Centre (KSNDMC)", type: "API", frequency: "Daily", url: null, status: "live" },
   ],
+  tenderPortals: [
+    { code: "KPPP",    name: "Karnataka eProcurement",              url: "https://eproc.karnataka.gov.in",    engine: "kppp-seam",     priority: 1 },
+    { code: "CPPP",    name: "Central Public Procurement Portal",   url: "https://eprocure.gov.in/eprocure/app", engine: "nicgep",     priority: 2 },
+    { code: "IREPS",   name: "Indian Railways ePS",                 url: "https://www.ireps.gov.in",          engine: "ireps",         priority: 3, filterByDistrict: ["Bengaluru Urban", "Mysuru"] },
+    { code: "DEFPROC", name: "Defence Procurement",                 url: "https://defproc.gov.in",            engine: "nicgep",        priority: 4 },
+    { code: "BEL_NIC", name: "Bharat Electronics Ltd eProc",        url: "https://eprocurebel.co.in/nicgep/app", engine: "nicgep",     priority: 5 },
+    { code: "HAL_TW",  name: "Hindustan Aeronautics Ltd",           url: "https://eproc.hal-india.co.in",     engine: "tenderwizard",  priority: 6 },
+  ],
+  tenderTerminology: {
+    tenderWord: "Tender",
+    emdWord: "EMD (Earnest Money Deposit)",
+    nitWord: "NIT (Notice Inviting Tender)",
+    localLanguageLabels: { kn: "ಟೆಂಡರ್" },
+  },
 };
 
 // ── Telangana ──────────────────────────────────────────────
@@ -437,13 +471,14 @@ export function getModuleSources(moduleName: string, stateSlug: string): ModuleS
     "responsibility":  { sources: ["District Administration"], frequency: "Quarterly" },
     "update-log":      { sources: ["ForThePeople.in Admin & Data Refresh"], frequency: "Real-time", isLive: true },
     services:          { sources: ["District NIC Portal", "State Government Directory", "MyScheme.gov.in"], frequency: "Quarterly" },
+    tenders:           { sources: ["KPPP (Karnataka eProc)", "CPPP (GePNIC)", "IREPS", "defproc.gov.in", "BEL eProc", "HAL TenderWizard"], frequency: "Every 30 minutes", isLive: true },
   };
   return map[moduleName] ?? { sources: ["Government public data portals"], frequency: "Periodic" };
 }
 
 // ── AI insight update frequency by module ───────────────────
 export function getInsightFrequencyLabel(moduleName: string): string {
-  const liveModules = ["weather", "crops", "water", "power", "news", "alerts"];
+  const liveModules = ["weather", "crops", "water", "power", "news", "alerts", "tenders"];
   if (liveModules.includes(moduleName)) return "Updated every 2 hours";
   const weeklyModules = ["finance", "infrastructure", "schemes", "health"];
   if (weeklyModules.includes(moduleName)) return "Updated weekly";
