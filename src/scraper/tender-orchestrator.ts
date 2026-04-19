@@ -10,10 +10,15 @@ import { prisma } from "@/lib/db";
 import { createHash } from "node:crypto";
 import type { EnginePortalConfig, RawTender, ScraperEngine } from "./engines/types";
 import { kpppSeamEngine } from "./engines/kppp-seam-engine";
+import { nicgepEngine } from "./engines/nicgep-engine";
+import { irepsEngine } from "./engines/ireps-engine";
+import { tenderWizardEngine } from "./engines/tenderwizard-engine";
 
 const ENGINES: Record<string, ScraperEngine> = {
   "kppp-seam": kpppSeamEngine,
-  // Phase 4 will register: 'nicgep', 'ireps', 'tenderwizard'
+  "nicgep": nicgepEngine,
+  "ireps": irepsEngine,
+  "tenderwizard": tenderWizardEngine,
 };
 
 interface RunOptions {
