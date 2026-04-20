@@ -27,24 +27,28 @@ model State {
 }
 
 model District {
-  id           String  @id @default(cuid())
-  stateId      String
-  state        State   @relation(fields: [stateId], references: [id])
-  name         String
-  nameLocal    String
-  slug         String
-  tagline      String?
-  taglineLocal String?
-  active       Boolean @default(false)
-  population   Int?
-  area         Float?
-  talukCount   Int?
-  villageCount Int?
-  literacy     Float?
-  sexRatio     Int?
-  density      Float?
-  avgRainfall  Float?
-  taluks       Taluk[]
+  id            String  @id @default(cuid())
+  stateId       String
+  state         State   @relation(fields: [stateId], references: [id])
+  name          String
+  nameLocal     String
+  slug          String
+  tagline       String?
+  taglineLocal  String?
+  active        Boolean @default(false)
+  // Whether the Tenders module (Module 30) is activated for this district.
+  // When false, the /tenders page renders a locked "coming soon" state
+  // instead of the dashboard. See docs/TENDERS-ACTIVATION.md.
+  tendersActive Boolean @default(false)
+  population    Int?
+  area          Float?
+  talukCount    Int?
+  villageCount  Int?
+  literacy      Float?
+  sexRatio      Int?
+  density       Float?
+  avgRainfall   Float?
+  taluks        Taluk[]
 
   leaders             Leader[]
   infraProjects       InfraProject[]

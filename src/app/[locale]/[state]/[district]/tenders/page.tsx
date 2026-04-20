@@ -17,7 +17,16 @@ import ModuleErrorBoundary from "@/components/common/ModuleErrorBoundary";
 import { getModuleSources } from "@/lib/constants/state-config";
 import TenderDisclaimer from "@/components/tenders/TenderDisclaimer";
 import TenderCard, { type TenderCardData } from "@/components/tenders/TenderCard";
+import TenderLockedState from "@/components/tenders/TenderLockedState";
 import { formatInr } from "@/lib/tenders/format";
+
+interface AccessResponse {
+  tendersActive: boolean;
+  districtName: string;
+  districtSlug: string;
+  stateName: string;
+  stateSlug: string;
+}
 
 type ListResponse = { tenders: TenderCardData[]; total: number; page: number; pageSize: number; districtName: string };
 type StatsResponse = {
@@ -53,6 +62,15 @@ export default function TendersPage({
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
+  // Per-district lock check — reads from DB.tendersActive. When false we
+  // render TenderLockedState instead of the dashboard. Cheap single-row
+  // query; cached for 2 minutes by react-query so it won't fire per nav.
+  const access = useQuery<AccessResponse>({
+    queryKey: ["tenders-access", districtSlug],
+    queryFn: () => fetch(`/api/tenders/${districtSlug}/access`).then((r) => r.json()),
+    staleTime: 2 * 60_000,
+  });
+
   const listQuery = useQuery<ListResponse>({
     queryKey: ["tenders-list", districtSlug, tab, valuePreset, category, onlyFlagged, onlyMse, search, page],
     queryFn: async () => {
@@ -79,6 +97,23 @@ export default function TendersPage({
 
   const moduleSources = getModuleSources("tenders", stateSlug);
   const tenders = (listQuery.data?.tenders ?? []).filter((t) => (onlyFlagged ? t.redFlags.length > 0 : true));
+
+  // Render the locked state whenever the flag resolves false. Until the
+  // access query resolves we show nothing heavy — the dashboard shell
+  // below its own loading states will handle the brief flash.
+  if (access.data && access.data.tendersActive === false) {
+    return (
+      <ModuleErrorBoundary moduleName="TendersLocked">
+        <TenderLockedState
+          locale={locale}
+          stateSlug={stateSlug}
+          stateName={access.data.stateName ?? ""}
+          districtSlug={districtSlug}
+          districtName={access.data.districtName ?? ""}
+        />
+      </ModuleErrorBoundary>
+    );
+  }
 
   return (
     <ModuleErrorBoundary moduleName="Tenders">
