@@ -120,9 +120,16 @@ export default function TenderDetailPage({ params }: { params: Promise<{ locale:
               <button onClick={() => navigator.share ? navigator.share({ title: t.title, text: shareText }) : navigator.clipboard.writeText(shareText)} style={linkBtn}>
                 <Share2 size={14} /> Share on WhatsApp
               </button>
-              <button onClick={() => alert("Alert subscription (v2 delivery) — captured your intent.")} style={linkBtn}>
+              {/* TODO: Replace with DPDP-compliant email collection + double
+                  opt-in + unsubscribe (future v2). For now a mailto opens the
+                  user's email client pre-filled with tender context — support@
+                  triages and replies when v2 alert infra is live. */}
+              <a
+                href={`mailto:support@forthepeople.in?subject=${encodeURIComponent(`Alert me for Tender ${t.sourceTenderId || t.id}`)}&body=${encodeURIComponent(`Please notify me of updates on this tender.\n\nTender: ${t.title}\nSource portal: ${t.sourcePortal}\nSource ID: ${t.sourceTenderId || t.id}\nURL: ${t.sourceUrl}\n\nMy email: (sending from this address is sufficient)`)}`}
+                style={linkBtn}
+              >
                 <Bookmark size={14} /> Save & alert me
-              </button>
+              </a>
             </div>
           </div>
 
