@@ -6,7 +6,7 @@ import {
   Home, Zap, GraduationCap, Tractor,
   ClipboardList, FilePen, Building, Scale, Heart,
   AlertTriangle, Building2, Handshake, Newspaper,
-  Database, Flame, Star, BookOpen, History, HardHat,
+  Database, Flame, Star, BookOpen, History, HardHat, Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -28,6 +28,7 @@ export const SIDEBAR_MODULES: SidebarModule[] = [
   { slug: "industries",       label: "Local Industries",    emoji: "🏭", icon: Factory,          description: "Sugar factories, arrears tracker", group: "core" },
   { slug: "finance",          label: "Finance & Budget",    emoji: "💰", icon: PiggyBank,        description: "Budget breakdown, lapsed funds tracker", group: "core" },
   { slug: "infrastructure",   label: "Infrastructure",      emoji: "🏗️", icon: HardHat,          description: "News-driven project tracker with timelines", group: "core" },
+  { slug: "tenders",          label: "Govt. Tenders",       emoji: "📑", icon: Gavel,            description: "Live tender tracker, red-flag indicators, apply guide", group: "core" },
   { slug: "crops",            label: "Crop Prices",         emoji: "🌾", icon: Wheat,            description: "Live mandi prices from AGMARKNET", group: "core" },
   { slug: "population",       label: "Population",          emoji: "📈", icon: BarChart3,        description: "Census trends, literacy, sex ratio", group: "core" },
   { slug: "weather",          label: "Weather & Rainfall",  emoji: "🌦️", icon: Cloud,            description: "Live weather, monsoon tracking", group: "core" },
