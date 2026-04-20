@@ -28,7 +28,7 @@ tenders a year per state. ForThePeople's Tenders module gives them:
 | 6 | eproc.hal-india.co.in | `tenderwizard` | HAL |
 
 All engines route through `src/scraper/engines/tender-http.ts`:
-- User-Agent: `ForThePeople.in Civic Transparency Bot (contact: takedown@forthepeople.in)`
+- User-Agent: `ForThePeople.in Civic Transparency Bot (contact: support@forthepeople.in)`
 - 1 request per 3 seconds per portal
 - robots.txt fetched fresh every 24h and honoured
 - 3-retry exponential backoff on 403 / 429 / 503
@@ -112,7 +112,7 @@ and `<TenderDisclaimer variant="full"/>` at the foot.
 | DPDP enforcement May 2027 | PII regex redaction on ingest (Aadhaar / phone / email / individual PAN) |
 | BNS §356 defamation via adjective | UI copy lint + runtime `assertFactualCopy` in `RedFlagBadge` |
 | Advocates Act §33 | eligibility wizard never calls server for matching |
-| RTBF drift | takedown@forthepeople.in with 7-wd SLA; `noindex` option + 7-year anonymisation for individual losing bidders |
+| RTBF drift | support@forthepeople.in with 7-wd SLA; `noindex` option + 7-year anonymisation for individual losing bidders |
 | GeM Cloudflare / Turnstile | **not scraped** — IT Act §43 risk; deferred to RTI/MoU in v2 |
 
 ## Deferred

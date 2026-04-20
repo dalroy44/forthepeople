@@ -23,14 +23,14 @@
    addresses and individual PAN are automatically redacted from ingested
    documents (DPDP Act 2023 readiness).
 6. **Takedown & grievance.** 7-working-day SLA. Email
-   takedown@forthepeople.in. Winning bidders may request 7-year
+   support@forthepeople.in. Winning bidders may request 7-year
    anonymisation for individual records.
 7. **Licence.** Aggregated data is republished under GODL-India (Feb
    2017) and Copyright Act §52(1)(q).
 
 ## Grievance / takedown officer
 
-- Email: `takedown@forthepeople.in` (TO BE CONFIRMED BY JAYANTH)
+- Email: `support@forthepeople.in` (TO BE CONFIRMED BY JAYANTH)
 - SLA: 7 working days per IT Rules 2021
 - Takedown categories:
   - Factual error in published data (top priority)

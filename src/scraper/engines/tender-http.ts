@@ -3,7 +3,9 @@
 // user agent, hard 3s-per-portal pacing, 3-retry backoff on 403/429/503,
 // and daily request caps. Never call fetch() directly from an engine.
 
-const USER_AGENT = "ForThePeople.in Civic Transparency Bot (contact: takedown@forthepeople.in)";
+// Bots can't use mailto: links, so we point portal operators at a public
+// contact URL instead. The contact page routes to support@forthepeople.in.
+const USER_AGENT = "ForThePeople.in Civic Transparency Bot (contact: https://forthepeople.in/contact)";
 
 type RobotsSnapshot = { fetchedAt: number; disallow: string[] };
 const robotsCache = new Map<string, RobotsSnapshot>();
