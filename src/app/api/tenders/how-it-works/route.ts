@@ -1,5 +1,8 @@
 // GET /api/tenders/how-it-works
-// Returns educational content from TenderEducationContent, ordered.
+// Returns explainer content from TenderEducationContent, ordered.
+// Filtered by docType='explainer' so disclaimer / FAQ rows (also stored in
+// this table but served by dedicated endpoints) don't leak into the
+// How-It-Works page.
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
@@ -8,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const sections = await prisma.tenderEducationContent.findMany({
+    where: { docType: "explainer" },
     orderBy: [{ orderIndex: "asc" }],
   });
 
