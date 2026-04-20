@@ -2,9 +2,9 @@
  * ForThePeople.in — Site-wide announcement (modal or banner).
  *
  * Reads the singleton SiteAnnouncement row from /api/site-announcement.
- * Admins edit it from /en/admin?tab=announcement. When the DB says
- * `enabled: false` (or the row is past its auto-hide date), this component
- * returns null and adds no UI.
+ * Admins edit it from /en/admin?tab=announcement. The admin toggle is
+ * the SOLE source of truth — when the DB says `enabled: false`, no row
+ * exists, or the API errors, this component renders nothing.
  *
  * Two display modes:
  *  • "modal"  — blocking splash on first load; user must click CTA to enter.
@@ -13,6 +13,9 @@
  * Acknowledgement per browser via localStorage[storageKey]. Changing the
  * storageKey in admin (e.g. bumping ..._v1 → ..._v2) forces every returning
  * visitor to see the announcement again — useful for multi-phase incidents.
+ *
+ * Filename is historical ("MigrationBanner"); behaviour is now generic
+ * site-announcement. Export name preserved for stable import path.
  */
 
 "use client";
@@ -32,42 +35,19 @@ type Announcement = {
   autoHideAfter: string | null;
 };
 
-// ── Static fallback for the migration window ──────────────────────────────
-// Used when the DB is unreachable or the SiteAnnouncement row is disabled.
-// Purpose: communicate with users even if Neon itself is down during the
-// very migration we're warning them about. Auto-retires on the hardcoded
-// date below so it can't linger past the migration window.
-const STATIC_FALLBACK_HIDE_AFTER_ISO = "2026-04-25T18:30:00Z"; // 2026-04-26 00:00 IST
-const STATIC_FALLBACK: Announcement = {
-  enabled: false,
-  variant: "critical",
-  displayMode: "modal",
-  title: "Temporary service notice — infrastructure migration",
-  bodyMd:
-`We're moving ForThePeople.in's database and cache to a new hosting setup between now and 25 April 2026. During this window you may notice some pages behaving a little differently than usual.
-
-None of this affects your data or any payment or contribution you've made. It's purely behind-the-scenes infrastructure work — the kind we'd rather tell you about than pretend isn't happening.`,
-  bullets: [
-    "Some dashboards showing outdated or incomplete numbers",
-    "Brief errors or blank sections on a few pages",
-    "Slightly slower load times while caches rebuild",
-  ],
-  highlightText: "Normal service resumes from 26 April 2026.",
-  footerNote: "If something looks seriously wrong, please report it via the feedback link in the footer — it helps us prioritise the post-migration cleanup.",
-  ctaButtonText: "I understand — continue to site",
-  storageKey: "ftp_site_announcement_v1",
-  autoHideAfter: STATIC_FALLBACK_HIDE_AFTER_ISO,
-};
-
 const VARIANT_STYLE: Record<string, { header: string; ring: string; badge: string }> = {
   critical: { header: "#991B1B", ring: "#FECACA", badge: "🚧" },
   warning:  { header: "#B45309", ring: "#FED7AA", badge: "⚠️" },
   info:     { header: "#1D4ED8", ring: "#BFDBFE", badge: "ℹ️" },
 };
 
+/**
+ * Resolve the announcement to show from the public API. Returns null while
+ * loading, or when the API says no announcement should render. The admin
+ * toggle is the only path to a non-null value here — there is no fallback.
+ */
 function useResolvedAnnouncement(): Announcement | null {
   const [ann, setAnn] = useState<Announcement | null>(null);
-  const [resolved, setResolved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,30 +55,19 @@ function useResolvedAnnouncement(): Announcement | null {
       try {
         const res = await fetch("/api/site-announcement", { cache: "no-store" });
         if (cancelled) return;
-        if (res.ok) {
-          const data = (await res.json()) as Partial<Announcement>;
-          if (data.enabled && (!data.autoHideAfter || new Date(data.autoHideAfter).getTime() > Date.now())) {
-            setAnn(data as Announcement);
-            setResolved(true);
-            return;
-          }
-        }
+        if (!res.ok) return;
+        const data = (await res.json()) as Partial<Announcement>;
+        if (!data.enabled) return;
+        if (data.autoHideAfter && new Date(data.autoHideAfter).getTime() <= Date.now()) return;
+        setAnn(data as Announcement);
       } catch {
-        /* fall through to static fallback below */
-      }
-      // No DB-driven announcement → use the static migration-window fallback,
-      // unless its own hardcoded auto-hide date has passed.
-      if (!cancelled) {
-        if (Date.now() < new Date(STATIC_FALLBACK_HIDE_AFTER_ISO).getTime()) {
-          setAnn(STATIC_FALLBACK);
-        }
-        setResolved(true);
+        // Network or DB error — fail closed (no banner) rather than show stale copy.
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  return resolved ? ann : null;
+  return ann;
 }
 
 export default function MigrationBanner() {
