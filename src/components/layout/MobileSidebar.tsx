@@ -26,7 +26,7 @@ const SIDEBAR_CATEGORIES = [
   },
   {
     label: "TRANSPARENCY",
-    slugs: ["rti", "file-rti", "gram-panchayat", "courts", "health"],
+    slugs: ["tenders", "rti", "file-rti", "gram-panchayat", "courts", "health"],
   },
   {
     label: "LOCAL INFO",

@@ -27,7 +27,7 @@ const DRAWER_CATEGORIES = [
   },
   {
     label: "Finance & Government",
-    slugs: ["finance", "schemes", "rti", "file-rti", "services", "offices", "elections", "courts", "exams"],
+    slugs: ["finance", "tenders", "schemes", "rti", "file-rti", "services", "offices", "elections", "courts", "exams"],
   },
   {
     label: "Infrastructure",
