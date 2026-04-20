@@ -67,7 +67,7 @@ export default function TenderDisclaimerPage({
 
   const { data, isLoading, error } = useQuery<DisclaimerResponse>({
     queryKey: ["tenders-disclaimer", stateSlug],
-    queryFn: () => fetch(`/api/tenders/${stateSlug}/disclaimer`).then((r) => r.json()),
+    queryFn: () => fetch(`/api/tenders/disclaimer/${stateSlug}`).then((r) => r.json()),
     staleTime: 60 * 60_000, // legal copy barely changes
   });
 
