@@ -33,27 +33,60 @@ const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }>
   NO_BID:              { bg: "#F3F4F6", color: "#4B5563", label: "No bid received" },
 };
 
+/**
+ * Deadline urgency — computed client-side from bidSubmissionEnd.
+ *   >7d  : green   (ample time)
+ *   2–7d : yellow  (approaching)
+ *   <48h : red, pulsing (urgent)
+ *   past : grey, dimmed (closed)
+ * Rendered as a left border stripe and carries an aria label for a11y.
+ */
+function deadlineUrgency(deadlineIso: string): {
+  borderColor: string;
+  pulsing: boolean;
+  dimmed: boolean;
+  ariaLabel: string;
+} {
+  const msLeft = new Date(deadlineIso).getTime() - Date.now();
+  const daysLeft = msLeft / 86400_000;
+  if (msLeft <= 0) {
+    return { borderColor: "#9CA3AF", pulsing: false, dimmed: true, ariaLabel: "Deadline has passed" };
+  }
+  if (daysLeft < 2) {
+    return { borderColor: "#DC2626", pulsing: true, dimmed: false, ariaLabel: `Deadline in ${Math.max(1, Math.round(daysLeft * 24))} hours (urgent)` };
+  }
+  if (daysLeft < 7) {
+    return { borderColor: "#F59E0B", pulsing: false, dimmed: false, ariaLabel: `Deadline in ${Math.ceil(daysLeft)} days (approaching)` };
+  }
+  return { borderColor: "#16A34A", pulsing: false, dimmed: false, ariaLabel: `Deadline in ${Math.ceil(daysLeft)} days (ample time)` };
+}
+
 export default function TenderCard({ tender, districtSlug, stateSlug, locale }: { tender: TenderCardData; districtSlug: string; stateSlug: string; locale: string }) {
   const status = STATUS_STYLE[tender.status] ?? { bg: "#F3F4F6", color: "#4B5563", label: tender.status };
   const flagCount = tender.redFlags.length;
   const publishedDaysAgo = Math.floor((Date.now() - new Date(tender.publishedAt).getTime()) / 86400_000);
+  const urgency = deadlineUrgency(tender.bidSubmissionEnd);
   const href = `/${locale}/${stateSlug}/${districtSlug}/tenders/${tender.id}`;
 
   return (
     <Link
       href={href}
+      aria-label={urgency.ariaLabel}
       style={{
         display: "block",
         border: "1px solid #E8E8E4",
+        borderLeft: `4px solid ${urgency.borderColor}`,
         background: "#FFFFFF",
         borderRadius: 12,
         padding: 16,
         textDecoration: "none",
         color: "inherit",
+        opacity: urgency.dimmed ? 0.65 : 1,
+        animation: urgency.pulsing ? "ftpTenderPulse 1.6s ease-in-out infinite" : undefined,
         transition: "border-color 120ms, box-shadow 120ms",
       }}
-      onMouseOver={(e) => { e.currentTarget.style.borderColor = "#C7D2FE"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}
-      onMouseOut={(e) => { e.currentTarget.style.borderColor = "#E8E8E4"; e.currentTarget.style.boxShadow = "none"; }}
+      onMouseOver={(e) => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}
+      onMouseOut={(e) => { e.currentTarget.style.boxShadow = "none"; }}
     >
       {/* Line 1: dept + category + location */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
@@ -113,6 +146,10 @@ export default function TenderCard({ tender, districtSlug, stateSlug, locale }: 
           <span style={{ color: "#991B1B", fontWeight: 600 }}>· ◆ {flagCount} flag{flagCount > 1 ? "s" : ""}</span>
         )}
       </div>
+
+      {/* Keyframes used by the <48h urgency pulsing border. Scoped per card,
+          cheap enough; deduping across many cards is a browser concern. */}
+      <style>{`@keyframes ftpTenderPulse { 0%,100% { box-shadow: -3px 0 0 0 rgba(220,38,38,0.0); } 50% { box-shadow: -3px 0 0 3px rgba(220,38,38,0.35); } }`}</style>
     </Link>
   );
 }

@@ -87,8 +87,18 @@ export default function TenderDetailPage({ params }: { params: Promise<{ locale:
 
           <TenderDisclaimer variant="compact" locale={locale} stateSlug={stateSlug} districtSlug={districtSlug} />
 
-          {/* Header */}
-          <div style={{ background: "#FFFFFF", border: "1px solid #E8E8E4", borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          {/* Header — left border colour-coded by deadline urgency:
+              green (>7d), yellow (2–7d), red+pulse (<48h), grey (past). */}
+          <div style={{
+            background: "#FFFFFF",
+            border: "1px solid #E8E8E4",
+            borderLeft: `5px solid ${heroUrgency(t.bidSubmissionEnd).borderColor}`,
+            borderRadius: 12,
+            padding: 20,
+            marginBottom: 20,
+            opacity: heroUrgency(t.bidSubmissionEnd).dimmed ? 0.8 : 1,
+            animation: heroUrgency(t.bidSubmissionEnd).pulsing ? "ftpTenderPulse 1.6s ease-in-out infinite" : undefined,
+          }}>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
               <span style={chipStyle("#EEF2FF", "#4338CA")}>{t.authority.shortCode}</span>
               {t.category && <span style={chipStyle("#F3F4F6", "#374151")}>{t.category.name}</span>}
@@ -207,6 +217,17 @@ export default function TenderDetailPage({ params }: { params: Promise<{ locale:
       </div>
     </ModuleErrorBoundary>
   );
+}
+
+/** Shared urgency logic — mirrors deadlineUrgency() in TenderCard so the
+ *  card view and the detail hero use identical thresholds. */
+function heroUrgency(deadlineIso: string): { borderColor: string; pulsing: boolean; dimmed: boolean } {
+  const msLeft = new Date(deadlineIso).getTime() - Date.now();
+  const daysLeft = msLeft / 86400_000;
+  if (msLeft <= 0) return { borderColor: "#9CA3AF", pulsing: false, dimmed: true };
+  if (daysLeft < 2) return { borderColor: "#DC2626", pulsing: true, dimmed: false };
+  if (daysLeft < 7) return { borderColor: "#F59E0B", pulsing: false, dimmed: false };
+  return { borderColor: "#16A34A", pulsing: false, dimmed: false };
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
