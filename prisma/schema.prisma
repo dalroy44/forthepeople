@@ -2108,13 +2108,20 @@ model SiteAnnouncement {
 model TenderEducationContent {
   id                 String   @id @default(cuid())
   slug               String   @unique
-  section            String // 'WHAT_IS_TENDER' | 'CAN_I_APPLY' | 'DSC' | 'EMD' | 'MSME' | 'STARTUP' | 'PROCESS' | 'FIRST_GEM' | 'FIRST_CPPP' | 'GLOSSARY'
+  section            String // 'WHAT_IS_TENDER' | 'CAN_I_APPLY' | 'DSC' | 'EMD' | 'MSME' | 'STARTUP' | 'PROCESS' | 'FIRST_GEM' | 'FIRST_CPPP' | 'GLOSSARY' | 'DISCLAIMER_*'
   orderIndex         Int
   title              String
   bodyMd             String   @db.Text
   bodyKn             String?  @db.Text
   translationPending Boolean  @default(true)
+  // 'explainer' (default, how-it-works) | 'disclaimer' | 'faq'. Allows
+  // one table to serve multiple surfaces.
+  docType            String   @default("explainer")
+  // Null = universal (applies every state); else a State.slug. Used to
+  // compose per-state legal disclaimers on top of the universal baseline.
+  stateSlug          String?
   lastEditedAt       DateTime @default(now()) @updatedAt
 
   @@index([section, orderIndex])
+  @@index([docType, stateSlug])
 }

@@ -5,9 +5,27 @@
 "use client";
 import Link from "next/link";
 
-type Props = { variant?: "compact" | "full" };
+type Props = {
+  variant?: "compact" | "full";
+  /** Props to build the district-scoped /tenders/disclaimer URL. When
+   *  omitted the "Full disclaimer" link is suppressed — only the compact
+   *  summary text shows. */
+  locale?: string;
+  stateSlug?: string;
+  districtSlug?: string;
+};
 
-export default function TenderDisclaimer({ variant = "compact" }: Props) {
+export default function TenderDisclaimer({
+  variant = "compact",
+  locale,
+  stateSlug,
+  districtSlug,
+}: Props) {
+  const disclaimerHref =
+    locale && stateSlug && districtSlug
+      ? `/${locale}/${stateSlug}/${districtSlug}/tenders/disclaimer`
+      : null;
+
   if (variant === "compact") {
     return (
       <div
@@ -23,7 +41,15 @@ export default function TenderDisclaimer({ variant = "compact" }: Props) {
           lineHeight: 1.6,
         }}
       >
-        <strong style={{ color: "#0F172A" }}>Data source:</strong> tenders published on KPPP, CPPP, IREPS, defproc.gov.in, BEL eProc and HAL TenderWizard — aggregated under RTI §4 proactive-disclosure rules and the GODL-India licence. <Link href="/tenders/disclaimer" style={{ color: "#2563EB", textDecoration: "underline" }}>Full disclaimer</Link>.
+        <strong style={{ color: "#0F172A" }}>Data source:</strong> tenders published on KPPP, CPPP, IREPS, defproc.gov.in, BEL eProc and HAL TenderWizard — aggregated under RTI §4 proactive-disclosure rules and the GODL-India licence.
+        {disclaimerHref ? (
+          <>
+            {" "}
+            <Link href={disclaimerHref} style={{ color: "#2563EB", textDecoration: "underline" }}>Full disclaimer</Link>.
+          </>
+        ) : (
+          "."
+        )}
       </div>
     );
   }

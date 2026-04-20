@@ -38,7 +38,7 @@ export default function ApplyGuidePage({ params }: { params: Promise<{ locale: s
           <Link href={`/${locale}/${stateSlug}/${districtSlug}/tenders`} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#2563EB", textDecoration: "none", marginBottom: 16 }}>
             <ArrowLeft size={14} /> Back to tenders
           </Link>
-          <TenderDisclaimer variant="compact" />
+          <TenderDisclaimer variant="compact" locale={locale} stateSlug={stateSlug} districtSlug={districtSlug} />
 
           <h1 style={{ fontSize: 26, fontWeight: 700, color: "#0F172A", margin: "0 0 8px" }}>
             <ShieldCheck size={24} style={{ display: "inline", marginRight: 8, verticalAlign: "-4px", color: "#16A34A" }} />
@@ -105,7 +105,7 @@ export default function ApplyGuidePage({ params }: { params: Promise<{ locale: s
           </div>
 
           <div style={{ marginTop: 40 }}>
-            <TenderDisclaimer variant="full" />
+            <TenderDisclaimer variant="full" locale={locale} stateSlug={stateSlug} districtSlug={districtSlug} />
           </div>
         </div>
       </div>

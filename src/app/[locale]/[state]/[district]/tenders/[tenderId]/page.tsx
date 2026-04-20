@@ -85,7 +85,7 @@ export default function TenderDetailPage({ params }: { params: Promise<{ locale:
             <ArrowLeft size={14} /> Back to tenders
           </Link>
 
-          <TenderDisclaimer variant="compact" />
+          <TenderDisclaimer variant="compact" locale={locale} stateSlug={stateSlug} districtSlug={districtSlug} />
 
           {/* Header */}
           <div style={{ background: "#FFFFFF", border: "1px solid #E8E8E4", borderRadius: 12, padding: 20, marginBottom: 20 }}>
@@ -201,7 +201,7 @@ export default function TenderDetailPage({ params }: { params: Promise<{ locale:
           )}
 
           <div style={{ marginTop: 40 }}>
-            <TenderDisclaimer variant="full" />
+            <TenderDisclaimer variant="full" locale={locale} stateSlug={stateSlug} districtSlug={districtSlug} />
           </div>
         </div>
       </div>

@@ -127,7 +127,7 @@ export default function TendersPage({
             liveTag
           />
 
-          <TenderDisclaimer variant="compact" />
+          <TenderDisclaimer variant="compact" locale={locale} stateSlug={stateSlug} districtSlug={districtSlug} />
           <DataSourceBanner
             moduleName="tenders"
             sources={moduleSources.sources}
@@ -227,7 +227,7 @@ export default function TendersPage({
           )}
 
           <div style={{ marginTop: 40 }}>
-            <TenderDisclaimer variant="full" />
+            <TenderDisclaimer variant="full" locale={locale} stateSlug={stateSlug} districtSlug={districtSlug} />
           </div>
         </div>
       </div>
