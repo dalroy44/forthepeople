@@ -10,34 +10,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
-import { SIDEBAR_MODULES } from "@/lib/constants/sidebar-modules";
+import { SIDEBAR_MODULES, getTieredModules, MOBILE_TAB_MODULES } from "@/lib/constants/sidebar-modules";
 
-// 4 fixed bottom tabs (5th slot = "More" button)
-const FIXED_TABS = ["overview", "crops", "weather", "news"] as const;
+// 4 fixed bottom tabs (5th slot = "More" button). Defined once in
+// sidebar-modules.ts; citizens use these most frequently.
+const FIXED_TABS = MOBILE_TAB_MODULES;
 
-// All 29 modules grouped for the drawer
-const DRAWER_CATEGORIES = [
-  {
-    label: "Core Data",
-    slugs: ["overview", "map", "leadership", "population"],
-  },
-  {
-    label: "Agriculture & Water",
-    slugs: ["crops", "weather", "water", "farm", "industries"],
-  },
-  {
-    label: "Finance & Government",
-    slugs: ["finance", "tenders", "schemes", "rti", "file-rti", "services", "offices", "elections", "courts", "exams"],
-  },
-  {
-    label: "Infrastructure",
-    slugs: ["transport", "power", "housing", "jjm", "schools", "health", "police"],
-  },
-  {
-    label: "Community",
-    slugs: ["famous-personalities", "gram-panchayat", "citizen-corner", "alerts", "news", "data-sources", "responsibility"],
-  },
-] as const;
+// Drawer categories derived from the single source of truth — no
+// hardcoded slug arrays in this component.
+const DRAWER_CATEGORIES = getTieredModules().map((g) => ({
+  label: g.label,
+  slugs: g.modules.map((m) => m.slug),
+}));
 
 interface MobileTabNavProps {
   locale: string;

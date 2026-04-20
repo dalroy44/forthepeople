@@ -10,7 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { SIDEBAR_MODULES } from "@/lib/constants/sidebar-modules";
+import { SIDEBAR_MODULES, getTieredModules, getOrderedSlugs } from "@/lib/constants/sidebar-modules";
 
 interface SidebarProps {
   locale: string;
@@ -18,38 +18,15 @@ interface SidebarProps {
   districtSlug: string;
 }
 
-// Categorized module layout — always visible on desktop, no collapse
-const SIDEBAR_CATEGORIES = [
-  {
-    label: "QUICK ACCESS",
-    slugs: ["overview", "crops", "weather", "water", "finance", "infrastructure"],
-  },
-  {
-    label: "LIVE DATA",
-    slugs: ["map", "population", "police"],
-  },
-  {
-    label: "GOVERNANCE",
-    slugs: ["leadership", "industries", "schemes", "services", "exams", "elections"],
-  },
-  {
-    label: "COMMUNITY",
-    slugs: ["transport", "jjm", "housing", "power", "schools", "contributors"],
-  },
-  {
-    label: "TRANSPARENCY",
-    slugs: ["tenders", "farm", "rti", "file-rti", "gram-panchayat", "courts", "health"],
-  },
-  {
-    label: "LOCAL INFO",
-    slugs: ["famous-personalities", "alerts", "offices", "citizen-corner", "responsibility", "news", "data-sources", "update-log"],
-  },
-];
+// Categories + flat order are derived from the priority field in
+// sidebar-modules.ts — no hardcoded slug lists live in this file.
+const SIDEBAR_CATEGORIES = getTieredModules().map((g) => ({
+  label: g.label.toUpperCase(),
+  slugs: g.modules.map((m) => m.slug),
+}));
 
-// Flat ordered list for collapsed (icon-only) view
-const ALL_SLUGS = SIDEBAR_CATEGORIES.flatMap((c) => c.slugs);
+const ALL_SLUGS = getOrderedSlugs();
 
-// Lookup map
 const MODULE_MAP = Object.fromEntries(SIDEBAR_MODULES.map((m) => [m.slug, m]));
 
 export default function Sidebar({ locale, stateSlug, districtSlug }: SidebarProps) {

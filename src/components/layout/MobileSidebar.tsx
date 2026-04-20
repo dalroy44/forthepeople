@@ -9,34 +9,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
-import { SIDEBAR_MODULES } from "@/lib/constants/sidebar-modules";
+import { SIDEBAR_MODULES, getTieredModules } from "@/lib/constants/sidebar-modules";
 
-const SIDEBAR_CATEGORIES = [
-  {
-    label: "LIVE DATA",
-    slugs: ["overview", "crops", "weather", "water", "population", "police"],
-  },
-  {
-    label: "GOVERNANCE",
-    slugs: ["leadership", "finance", "infrastructure", "schemes", "services", "exams", "elections"],
-  },
-  {
-    label: "COMMUNITY",
-    slugs: ["transport", "jjm", "housing", "power", "schools"],
-  },
-  {
-    label: "TRANSPARENCY",
-    slugs: ["tenders", "rti", "file-rti", "gram-panchayat", "courts", "health"],
-  },
-  {
-    label: "LOCAL INFO",
-    slugs: ["alerts", "offices", "citizen-corner", "famous-personalities", "news"],
-  },
-  {
-    label: "LOCAL ECONOMY",
-    slugs: ["industries", "farm", "map", "data-sources", "update-log", "responsibility"],
-  },
-];
+// Derived from the priority field in sidebar-modules.ts. Single source
+// of truth for tier order + labels across desktop + mobile nav.
+const SIDEBAR_CATEGORIES = getTieredModules().map((g) => ({
+  label: g.label.toUpperCase(),
+  slugs: g.modules.map((m) => m.slug),
+}));
 
 interface MobileSidebarProps {
   open: boolean;
