@@ -29,6 +29,7 @@ import { getStateConfig } from "@/lib/constants/state-config";
 import DistrictHeroIllustration from "@/components/district/DistrictHeroIllustration";
 import InfraSnippet from "@/components/district/InfraSnippet";
 import LeadersSnippet from "@/components/district/LeadersSnippet";
+import TenderSnippet from "@/components/district/TenderSnippet";
 import LiveElectionBanner from "@/components/district/LiveElectionBanner";
 import type { DistrictBadge } from "@/lib/constants/districts";
 
@@ -326,6 +327,11 @@ export default function OverviewClient({ locale, stateSlug, districtSlug, stateN
 
         {/* ── Infrastructure At a Glance — auto-hides if 0 projects ── */}
         <InfraSnippet district={districtSlug} state={stateSlug} base={base} />
+
+        {/* ── Govt. Tenders snippet — always renders (lock/live/stale/no-data) ── */}
+        <div style={{ marginTop: 16 }}>
+          <TenderSnippet locale={locale} district={districtSlug} state={stateSlug} base={base} />
+        </div>
 
         {/* ── Ongoing Projects ─────────────────────────── */}
         {ongoingProjects.length > 0 && (

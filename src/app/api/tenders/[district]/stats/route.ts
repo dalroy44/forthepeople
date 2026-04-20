@@ -35,6 +35,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ district: stri
     topAuthorities,
     categoryDistribution,
     redFlaggedLive,
+    lastCheckedAgg,
+    nextDeadlineRow,
+    districtFlag,
   ] = await Promise.all([
     prisma.tender.count({ where: live }),
     prisma.tender.aggregate({ where: live, _sum: { estimatedValueInr: true } }),
@@ -48,7 +51,38 @@ export async function GET(_req: Request, ctx: { params: Promise<{ district: stri
     prisma.tender.groupBy({ by: ["authorityId"], where: live, _count: true, orderBy: { _count: { authorityId: "desc" } }, take: 5 }),
     prisma.tender.groupBy({ by: ["categoryId"], where: live, _count: true, orderBy: { _count: { categoryId: "desc" } }, take: 10 }),
     prisma.tender.count({ where: { ...live, redFlags: { some: {} } } }),
+    // Snippet-specific: most recent lastCheckedAt for this district
+    // (Option B: derive "tender data freshness" from per-row timestamp,
+    // not from per-portal TenderScraperRun which wouldn't answer the
+    // per-district question).
+    prisma.tender.aggregate({ where: baseLocation, _max: { lastCheckedAt: true } }),
+    // Nearest-closing live tender for the snippet's "next deadline" line.
+    prisma.tender.findFirst({
+      where: live,
+      orderBy: { bidSubmissionEnd: "asc" },
+      select: { id: true, title: true, bidSubmissionEnd: true },
+    }),
+    // Activation flag — used to determine snippet status = LOCKED.
+    prisma.district.findFirst({ where: { name: districtName }, select: { tendersActive: true } }),
   ]);
+
+  // Snippet status derivation
+  const tendersActive = districtFlag?.tendersActive ?? false;
+  const lastCheckedAt = lastCheckedAgg._max.lastCheckedAt ?? null;
+  let snippetStatus: "LIVE" | "STALE" | "LOCKED" | "NO_DATA";
+  if (!tendersActive) snippetStatus = "LOCKED";
+  else if (liveCount === 0 && !lastCheckedAt) snippetStatus = "NO_DATA";
+  else if (!lastCheckedAt || Date.now() - lastCheckedAt.getTime() > 24 * 3600_000) snippetStatus = "STALE";
+  else snippetStatus = "LIVE";
+
+  const nextDeadline = nextDeadlineRow
+    ? {
+        id: nextDeadlineRow.id,
+        title: nextDeadlineRow.title,
+        bidSubmissionEnd: nextDeadlineRow.bidSubmissionEnd.toISOString(),
+        daysLeft: Math.max(0, Math.ceil((nextDeadlineRow.bidSubmissionEnd.getTime() - now.getTime()) / 86400_000)),
+      }
+    : null;
 
   // Hydrate authority + category names
   const authIds = topAuthorities.map((r) => r.authorityId).filter((v): v is string => !!v);
@@ -65,6 +99,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ district: stri
 
   return NextResponse.json(serializeForJson({
     districtName,
+    tendersActive,
+    snippetStatus,
+    lastCheckedAt: lastCheckedAt?.toISOString() ?? null,
+    nextDeadline,
+    closing48hCount: closingIn48h,
+    closing7dCount: closingIn7d,
     live: {
       count: liveCount,
       totalValueInr: liveValueAgg._sum.estimatedValueInr ?? BigInt(0),
