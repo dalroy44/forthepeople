@@ -125,7 +125,7 @@ export default function TenderDetailPage({ params }: { params: Promise<{ locale:
                   user's email client pre-filled with tender context — support@
                   triages and replies when v2 alert infra is live. */}
               <a
-                href={`mailto:support@forthepeople.in?subject=${encodeURIComponent(`Alert me for Tender ${t.sourceTenderId || t.id}`)}&body=${encodeURIComponent(`Please notify me of updates on this tender.\n\nTender: ${t.title}\nSource portal: ${t.sourcePortal}\nSource ID: ${t.sourceTenderId || t.id}\nURL: ${t.sourceUrl}\n\nMy email: (sending from this address is sufficient)`)}`}
+                href={`mailto:support@forthepeople.in?subject=${encodeURIComponent(`Alert me for Tender ${t.id}`)}&body=${encodeURIComponent(`Please notify me of updates on this tender.\n\nTender: ${t.title}\nSource portal: ${t.sourcePortal}\nSource URL: ${t.sourceUrl}\nInternal ID: ${t.id}\n\nMy email: (sending from this address is sufficient)`)}`}
                 style={linkBtn}
               >
                 <Bookmark size={14} /> Save & alert me
