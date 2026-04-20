@@ -39,7 +39,7 @@ type Announcement = {
 // date below so it can't linger past the migration window.
 const STATIC_FALLBACK_HIDE_AFTER_ISO = "2026-04-25T18:30:00Z"; // 2026-04-26 00:00 IST
 const STATIC_FALLBACK: Announcement = {
-  enabled: true,
+  enabled: false,
   variant: "critical",
   displayMode: "modal",
   title: "Temporary service notice — infrastructure migration",
