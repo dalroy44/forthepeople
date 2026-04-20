@@ -32,32 +32,78 @@ type Announcement = {
   autoHideAfter: string | null;
 };
 
+// ── Static fallback for the migration window ──────────────────────────────
+// Used when the DB is unreachable or the SiteAnnouncement row is disabled.
+// Purpose: communicate with users even if Neon itself is down during the
+// very migration we're warning them about. Auto-retires on the hardcoded
+// date below so it can't linger past the migration window.
+const STATIC_FALLBACK_HIDE_AFTER_ISO = "2026-04-25T18:30:00Z"; // 2026-04-26 00:00 IST
+const STATIC_FALLBACK: Announcement = {
+  enabled: true,
+  variant: "critical",
+  displayMode: "modal",
+  title: "Temporary service notice — infrastructure migration",
+  bodyMd:
+`We're moving ForThePeople.in's database and cache to a new hosting setup between now and 25 April 2026. During this window you may notice some pages behaving a little differently than usual.
+
+None of this affects your data or any payment or contribution you've made. It's purely behind-the-scenes infrastructure work — the kind we'd rather tell you about than pretend isn't happening.`,
+  bullets: [
+    "Some dashboards showing outdated or incomplete numbers",
+    "Brief errors or blank sections on a few pages",
+    "Slightly slower load times while caches rebuild",
+  ],
+  highlightText: "Normal service resumes from 26 April 2026.",
+  footerNote: "If something looks seriously wrong, please report it via the feedback link in the footer — it helps us prioritise the post-migration cleanup.",
+  ctaButtonText: "I understand — continue to site",
+  storageKey: "ftp_site_announcement_v1",
+  autoHideAfter: STATIC_FALLBACK_HIDE_AFTER_ISO,
+};
+
 const VARIANT_STYLE: Record<string, { header: string; ring: string; badge: string }> = {
   critical: { header: "#991B1B", ring: "#FECACA", badge: "🚧" },
   warning:  { header: "#B45309", ring: "#FED7AA", badge: "⚠️" },
   info:     { header: "#1D4ED8", ring: "#BFDBFE", badge: "ℹ️" },
 };
 
-export default function MigrationBanner() {
+function useResolvedAnnouncement(): Announcement | null {
   const [ann, setAnn] = useState<Announcement | null>(null);
-  const [acknowledged, setAcknowledged] = useState(false);
+  const [resolved, setResolved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/site-announcement", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = (await res.json()) as Partial<Announcement>;
-        if (cancelled || !data.enabled) return;
-        if (data.autoHideAfter && new Date(data.autoHideAfter).getTime() <= Date.now()) return;
-        setAnn(data as Announcement);
+        if (cancelled) return;
+        if (res.ok) {
+          const data = (await res.json()) as Partial<Announcement>;
+          if (data.enabled && (!data.autoHideAfter || new Date(data.autoHideAfter).getTime() > Date.now())) {
+            setAnn(data as Announcement);
+            setResolved(true);
+            return;
+          }
+        }
       } catch {
-        /* network or DB down — render nothing */
+        /* fall through to static fallback below */
+      }
+      // No DB-driven announcement → use the static migration-window fallback,
+      // unless its own hardcoded auto-hide date has passed.
+      if (!cancelled) {
+        if (Date.now() < new Date(STATIC_FALLBACK_HIDE_AFTER_ISO).getTime()) {
+          setAnn(STATIC_FALLBACK);
+        }
+        setResolved(true);
       }
     })();
     return () => { cancelled = true; };
   }, []);
+
+  return resolved ? ann : null;
+}
+
+export default function MigrationBanner() {
+  const ann = useResolvedAnnouncement();
+  const [acknowledged, setAcknowledged] = useState(false);
 
   useEffect(() => {
     if (!ann) return;
