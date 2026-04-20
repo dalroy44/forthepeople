@@ -328,10 +328,10 @@ export default function OverviewClient({ locale, stateSlug, districtSlug, stateN
         {/* ── Infrastructure At a Glance — auto-hides if 0 projects ── */}
         <InfraSnippet district={districtSlug} state={stateSlug} base={base} />
 
-        {/* ── Govt. Tenders snippet — always renders (lock/live/stale/no-data) ── */}
-        <div style={{ marginTop: 16 }}>
-          <TenderSnippet locale={locale} district={districtSlug} state={stateSlug} base={base} />
-        </div>
+        {/* ── Govt. Tenders snippet — always renders (lock/live/stale/no-data).
+            No outer wrapper: the snippet carries its own marginBottom:24,
+            matching LeadersSnippet + InfraSnippet for consistent alignment. */}
+        <TenderSnippet locale={locale} district={districtSlug} state={stateSlug} base={base} />
 
         {/* ── Ongoing Projects ─────────────────────────── */}
         {ongoingProjects.length > 0 && (
