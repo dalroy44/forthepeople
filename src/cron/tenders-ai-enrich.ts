@@ -126,24 +126,44 @@ ${core}
 Extracted document text (PII-redacted):
 ${docExtracts || "[no document text available]"}`;
 
+  // "In plain words" — 3-bullet summary for citizens. Grade-6 reading level,
+  // ≤25 words per bullet. Separate call so the shape is strict JSON and we
+  // can render it as 3 discrete <li>s on the detail page.
+  const plainBulletsPrompt = `Write a 3-bullet citizen summary of this government tender. Output strict JSON only:
+{
+  "what": "One sentence explaining WHAT is being procured, in plain English. Max 25 words, grade-6 reading level.",
+  "whoCanApply": "One sentence about WHO can apply — company type, turnover, experience. Avoid jargon. Max 25 words.",
+  "deadline": "One sentence stating WHEN bids close and any key event (pre-bid, opening). Max 25 words."
+}
+Neutral, factual language only. Never use words like 'suspicious', 'corrupt', 'dubious', 'irregular'.
+
+Tender metadata:
+${core}
+
+Extracted document text (PII-redacted):
+${docExtracts || "[no document text available]"}`;
+
   if (dryRun) {
     console.log(`[enrich:dry-run] tender=${tenderId}`);
     console.log(`  summaryPrompt (${summaryPrompt.length} chars)`);
     console.log(`  eligibilityPrompt (${eligibilityPrompt.length} chars)`);
     console.log(`  checklistPrompt (${checklistPrompt.length} chars)`);
+    console.log(`  plainBulletsPrompt (${plainBulletsPrompt.length} chars)`);
     return { ok: true, costInr: 0 };
   }
 
   try {
-    const [summaryRes, eligRes, checklistRes] = await Promise.all([
+    const [summaryRes, eligRes, checklistRes, bulletsRes] = await Promise.all([
       callAI({ systemPrompt: "You are a civic tender summariser. Factual only.", userPrompt: summaryPrompt, purpose: "news-analysis", maxTokens: 512, temperature: 0.2 }),
       callAIJSON<Record<string, unknown>>({ systemPrompt: "You extract tender eligibility as strict JSON.", userPrompt: eligibilityPrompt, purpose: "news-analysis", maxTokens: 512, temperature: 0.1 }).catch(() => null),
       callAIJSON<Array<Record<string, unknown>>>({ systemPrompt: "You extract bidder document checklists as strict JSON.", userPrompt: checklistPrompt, purpose: "news-analysis", maxTokens: 512, temperature: 0.1 }).catch(() => null),
+      callAIJSON<{ what: string; whoCanApply: string; deadline: string }>({ systemPrompt: "You write 3-bullet citizen summaries of government tenders in grade-6 English. Factual, neutral language only.", userPrompt: plainBulletsPrompt, purpose: "news-analysis", maxTokens: 256, temperature: 0.2 }).catch(() => null),
     ]);
 
     const summaryText = summaryRes.text.trim();
     const keyEligibility = (eligRes?.data ?? null) as Prisma.InputJsonValue | null;
     const documentChecklist = (checklistRes?.data ?? null) as Prisma.InputJsonValue | null;
+    const plainBullets = (bulletsRes?.data ?? null) as Prisma.InputJsonValue | null;
 
     // Free-tier OpenRouter models are priced at zero → cost defaults to 0.
     // Any fallback to a paid model will surface here for the daily budget alert.
@@ -155,6 +175,7 @@ ${docExtracts || "[no document text available]"}`;
         plainEnglishSummary: summaryText,
         keyEligibility: keyEligibility ?? Prisma.JsonNull,
         documentChecklist: documentChecklist ?? Prisma.JsonNull,
+        plainBullets: plainBullets ?? Prisma.JsonNull,
         aiModel: summaryRes.model,
         inputTokens: null,
         outputTokens: null,
@@ -167,6 +188,7 @@ ${docExtracts || "[no document text available]"}`;
         plainEnglishSummary: summaryText,
         keyEligibility: keyEligibility ?? Prisma.JsonNull,
         documentChecklist: documentChecklist ?? Prisma.JsonNull,
+        plainBullets: plainBullets ?? Prisma.JsonNull,
         aiModel: summaryRes.model,
         costInr,
       },

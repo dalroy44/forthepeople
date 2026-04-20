@@ -52,7 +52,13 @@ type TenderDetail = {
     contract: { contractValueInr: string; contractPeriodDays: number | null; implementationStatus: string; expectedCompletionAt: string | null } | null;
     documents: Array<{ id: string; docType: string; displayName: string; sourceUrl: string }>;
     redFlags: Array<{ flagType: string; factualStatement: string; referenceRule: string | null }>;
-    aiSummary: { plainEnglishSummary: string; generatedAt: string; aiModel: string; documentChecklist: unknown } | null;
+    aiSummary: {
+      plainEnglishSummary: string;
+      generatedAt: string;
+      aiModel: string;
+      documentChecklist: unknown;
+      plainBullets: { what?: string; whoCanApply?: string; deadline?: string } | null;
+    } | null;
   };
   timeline: TimelineEvent[];
 };
@@ -147,19 +153,40 @@ export default function TenderDetailPage({ params }: { params: Promise<{ locale:
             </Section>
           )}
 
-          {/* AI Summary */}
-          {t.aiSummary ? (
-            <Section title="Plain-English summary">
+          {/* In Plain Words — 3-bullet summary for citizens. Shown above
+              the full paragraph summary when available. Falls back to a
+              placeholder when the enrichment cron hasn't run yet. */}
+          <Section title="In plain words">
+            {t.aiSummary?.plainBullets &&
+             (t.aiSummary.plainBullets.what ||
+              t.aiSummary.plainBullets.whoCanApply ||
+              t.aiSummary.plainBullets.deadline) ? (
+              <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.75, fontSize: 14, color: "#0F172A" }}>
+                {t.aiSummary.plainBullets.what && (
+                  <li><strong>What:</strong> {t.aiSummary.plainBullets.what}</li>
+                )}
+                {t.aiSummary.plainBullets.whoCanApply && (
+                  <li><strong>Who can apply:</strong> {t.aiSummary.plainBullets.whoCanApply}</li>
+                )}
+                {t.aiSummary.plainBullets.deadline && (
+                  <li><strong>Deadline:</strong> {t.aiSummary.plainBullets.deadline}</li>
+                )}
+              </ul>
+            ) : (
+              <div style={{ fontSize: 13, color: "#6B7280" }}>Summary being prepared. Check back soon.</div>
+            )}
+          </Section>
+
+          {/* Full AI summary (paragraph form) — kept below the bullets for
+              readers who want the narrative. */}
+          {t.aiSummary?.plainEnglishSummary ? (
+            <Section title="Full summary">
               <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 8 }}>
                 AI-generated via {t.aiSummary.aiModel} · {new Date(t.aiSummary.generatedAt).toLocaleString("en-IN")} · verify against the NIT PDF before bidding.
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.7, color: "#0F172A", whiteSpace: "pre-wrap" }}>{t.aiSummary.plainEnglishSummary}</p>
             </Section>
-          ) : (
-            <Section title="Plain-English summary">
-              <div style={{ fontSize: 13, color: "#6B7280" }}>AI summary pending. The next enrichment cron cycle (every 2 hours) will generate a plain-English summary from the NIT PDF.</div>
-            </Section>
-          )}
+          ) : null}
 
           {/* Eligibility wizard */}
           <Section title="Can I apply?">

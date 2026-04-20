@@ -2019,6 +2019,11 @@ model TenderAISummary {
   plainEnglishSummary String @db.Text
   keyEligibility      Json?
   documentChecklist   Json?
+  // Structured 3-bullet "In plain words" summary for the detail page:
+  // { what: string, whoCanApply: string, deadline: string }
+  // Each bullet max ~25 words, grade-6 reading level. Populated by the
+  // enrichment cron's updated prompt.
+  plainBullets        Json?
 
   aiModel      String
   generatedAt  DateTime @default(now())
