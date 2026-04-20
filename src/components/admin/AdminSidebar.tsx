@@ -30,6 +30,7 @@ import {
   Pencil,
   History,
   Heart,
+  Megaphone,
 } from "lucide-react";
 import ModuleHelp from "./ModuleHelp";
 import { logoutAction } from "@/app/[locale]/admin/actions";
@@ -50,6 +51,7 @@ type ItemId =
   | "content-editor"
   | "update-log"
   | "support-page"
+  | "announcement"
   | "feedback";
 
 interface NavItem {
@@ -128,6 +130,14 @@ const GROUPS: Group[] = [
         buildHref: (locale) => `/${locale}/admin?tab=support-page`,
         inPageTab: true,
         help: "Edit the /support page bio, photo, cost breakdown, and help links",
+      },
+      {
+        id: "announcement",
+        label: "Site Announcement",
+        icon: Megaphone,
+        buildHref: (locale) => `/${locale}/admin?tab=announcement`,
+        inPageTab: true,
+        help: "Sitewide modal/banner shown on first page load — toggle, edit, schedule auto-hide",
       },
     ],
   },

@@ -2079,6 +2079,28 @@ model TenderScraperRun {
   @@index([configId, startedAt])
 }
 
+// ═════════════════════════════════════════════════════════════════════════
+// SiteAnnouncement — singleton. Admin-editable splash/banner shown to all
+// public visitors. Used for infra migrations, planned downtime, launch
+// notices, etc. When enabled=false it simply doesn't render.
+// ═════════════════════════════════════════════════════════════════════════
+model SiteAnnouncement {
+  id            String    @id @default("site-announcement-singleton")
+  enabled       Boolean   @default(false)
+  variant       String    @default("critical") // 'critical' | 'warning' | 'info'
+  displayMode   String    @default("modal") // 'modal' | 'banner'
+  title         String    @default("Temporary service notice")
+  bodyMd        String    @db.Text
+  bulletsJson   Json      @default("[]") // optional string[] for <li> bullets
+  highlightText String? // optional positive green line (e.g. "Normal service resumes from 26 April 2026")
+  footerNote    String? // optional smaller footer text
+  ctaButtonText String    @default("I understand — continue to site")
+  storageKey    String    @default("ftp_site_announcement_v1") // change to force re-acknowledgement from everyone
+  autoHideAfter DateTime? // hard stop; component returns null after this date regardless of enabled
+  updatedAt     DateTime  @updatedAt
+  updatedBy     String?
+}
+
 model TenderEducationContent {
   id                 String   @id @default(cuid())
   slug               String   @unique
