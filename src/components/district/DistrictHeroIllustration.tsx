@@ -340,7 +340,7 @@ export default function DistrictHeroIllustration({
       />
 
       {/* Content */}
-      <div style={{ position: "relative", zIndex: 1, padding: "24px 28px 20px" }}>
+      <div style={{ position: "relative", zIndex: 1, padding: "24px 28px 20px", maxWidth: "55%" }}>
         <div style={{ fontSize: 12, color: "#9B9B9B", marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
           <MapPin size={11} />
           {stateName}
@@ -369,10 +369,10 @@ export default function DistrictHeroIllustration({
         {badges && badges.length > 0 && <DistrictBadges badges={badges} districtSlug={districtSlug} />}
 
         {/* Stats strip */}
-        <div className="stats-strip" style={{ display: "flex", gap: 20, marginTop: 16, flexWrap: "wrap" }}>
+        <div className="stats-strip" style={{ display: "flex", gap: 20, marginTop: 16, flexWrap: "wrap", minWidth: 0, overflow: "hidden" }}>
           {stats.population && (
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "var(--font-mono)", letterSpacing: "-0.4px", color: "#1A1A1A" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "var(--font-mono)", letterSpacing: "-0.4px", color: "#1A1A1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {stats.population}
               </div>
               <div style={{ fontSize: 10, color: "#9B9B9B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Population</div>

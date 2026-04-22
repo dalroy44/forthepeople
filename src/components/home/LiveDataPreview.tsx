@@ -8,6 +8,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface Preview {
   topCrops: { commodity: string; modalPrice: number; date: string; districtId: string }[];
@@ -20,7 +21,7 @@ interface Preview {
   }[];
 }
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, t?: any) {
   const diff = (Date.now() - new Date(iso).getTime()) / 60000;
   if (diff < 60) return `${Math.round(diff)}m ago`;
   if (diff < 1440) return `${Math.round(diff / 60)}h ago`;
@@ -81,6 +82,8 @@ function PreviewCard({
 }
 
 export default function LiveDataPreview({ locale }: { locale: string }) {
+  const t = useTranslations("home");
+  const tCommon = useTranslations("common");
   const { data, isLoading } = useQuery<Preview>({
     queryKey: ["homepage-preview"],
     queryFn: () => fetch("/api/data/homepage-preview").then((r) => r.json()),
@@ -124,15 +127,15 @@ export default function LiveDataPreview({ locale }: { locale: string }) {
           padding: "16px 16px 8px",
         }}
       >
-        Live Data — Right Now
+        {t("liveDataTitle")}
       </div>
       <div style={{ padding: "0 16px 16px", display: "flex", gap: 12, overflowX: "auto" }}>
         {/* Crop Prices */}
         <PreviewCard
           emoji="🌾"
-          title="Today's Crop Prices"
+          title={t("cropPricesTitle")}
           link={`/${locale}/${firstState}/${firstSlug}/crops`}
-          linkLabel="All prices →"
+          linkLabel={t("allPrices")}
         >
           {data?.topCrops?.length ? (
             data.topCrops.map((c) => (
@@ -144,16 +147,16 @@ export default function LiveDataPreview({ locale }: { locale: string }) {
               </div>
             ))
           ) : (
-            <span style={{ fontSize: 12, color: "#9B9B9B" }}>No data available</span>
+            <span style={{ fontSize: 12, color: "#9B9B9B" }}>{tCommon("noData")}</span>
           )}
         </PreviewCard>
 
         {/* Dam Levels */}
         <PreviewCard
           emoji="🚰"
-          title="Dam Levels"
+          title={t("damLevelsTitle")}
           link={`/${locale}/${firstState}/${firstSlug}/water`}
-          linkLabel="Full report →"
+          linkLabel={t("fullReport")}
         >
           {data?.latestDams?.length ? (
             data.latestDams.map((d) => (
@@ -170,9 +173,9 @@ export default function LiveDataPreview({ locale }: { locale: string }) {
         {/* News */}
         <PreviewCard
           emoji="📰"
-          title="Latest News"
+          title={t("latestNewsTitle")}
           link={`/${locale}/${firstState}/${firstSlug}/news`}
-          linkLabel="All news →"
+          linkLabel={t("allNews")}
         >
           {data?.latestNews?.length ? (
             data.latestNews.map((n, i) => (
@@ -193,9 +196,9 @@ export default function LiveDataPreview({ locale }: { locale: string }) {
         {/* Weather */}
         <PreviewCard
           emoji="🌦️"
-          title="Weather"
+          title={t("weatherTitle")}
           link={`/${locale}/${firstState}/${firstSlug}/weather`}
-          linkLabel="Full forecast →"
+          linkLabel={t("fullForecast")}
         >
           {data?.districtPreviews?.length ? (
             data.districtPreviews.map((d) => (

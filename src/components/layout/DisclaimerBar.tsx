@@ -6,10 +6,12 @@
 
 "use client";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 const STORAGE_KEY = "ftp_disclaimer_v1";
 
 export default function DisclaimerBar() {
+  const t = useTranslations("site");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -42,9 +44,8 @@ export default function DisclaimerBar() {
     >
       <span style={{ flexShrink: 0 }}>⚠️</span>
       <span style={{ flex: 1 }}>
-        <strong>ForThePeople.in is NOT an official government website.</strong>{" "}
-        Data is sourced from publicly available government portals under India&apos;s Open Data Policy (NDSAP).
-        Always verify critical information at the original government portal.
+        <strong>{t("notice")}</strong>{" "}
+        {t("verifyNotice")}
       </span>
       <button
         onClick={dismiss}

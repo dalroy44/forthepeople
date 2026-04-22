@@ -8,6 +8,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface Stats {
   activeDistricts: number;
@@ -37,17 +38,6 @@ function useCountUp(target: number, duration = 1500) {
   return count;
 }
 
-function timeAgo(isoStr: string | null): string {
-  if (!isoStr) return "–";
-  const diff = (Date.now() - new Date(isoStr).getTime()) / 60000; // minutes
-  if (diff < 1) return "< 1 min ago";
-  if (diff < 60) return `${Math.round(diff)} min ago`;
-  const hours = Math.round(diff / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  const days = Math.floor(diff / 1440);
-  if (days <= 7) return `${days} day${days === 1 ? "" : "s"} ago`;
-  return new Date(isoStr).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
 
 function StatCard({ value, label, mono = true }: { value: string; label: string; mono?: boolean }) {
   return (
@@ -80,6 +70,7 @@ function StatCard({ value, label, mono = true }: { value: string; label: string;
 }
 
 export default function HomepageStats() {
+  const t = useTranslations("home");
   const { data } = useQuery<Stats>({
     queryKey: ["homepage-stats"],
     queryFn: () => fetch("/api/data/homepage-stats").then((r) => r.json()),
@@ -97,19 +88,19 @@ export default function HomepageStats() {
   return (
     <div>
       <div className="grid grid-cols-2 md:flex" style={{ gap: 8, padding: "12px 16px 0" }}>
-        <StatCard value={ready ? `${districts}` : "—"} label="Districts LIVE" />
-        <StatCard value={ready ? `${modules}` : "—"} label="Dashboards / District" />
+        <StatCard value={ready ? `${districts}` : "—"} label={t("districtsLive")} />
+        <StatCard value={ready ? `${modules}` : "—"} label={t("dashboards")} />
         <StatCard
           value={ready ? dataPoints.toLocaleString("en-IN") : "—"}
-          label="Data Points Tracked"
+          label={t("dataPoints")}
         />
-        <StatCard value={`${(data?.plannedDistricts ?? 780).toLocaleString("en-IN")}+`} label="Districts Coming" />
+        <StatCard value={`${(data?.plannedDistricts ?? 780).toLocaleString("en-IN")}+`} label={t("districtsComing")} />
         <div className="hidden md:contents">
-          <StatCard value={data?.mostRecentAt ? timeAgo(data.mostRecentAt) : "Live"} label="Last Updated" mono={false} />
+          <StatCard value={t("live")} label={t("lastUpdated")} mono={false} />
         </div>
       </div>
       <p style={{ fontSize: 11, color: "#9B9B9B", textAlign: "center", marginTop: 8 }}>
-        Data refreshes every 5–30 minutes from official government portals
+        {t("refreshNotice")}
       </p>
     </div>
   );

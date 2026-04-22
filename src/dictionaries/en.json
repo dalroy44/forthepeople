@@ -2,7 +2,9 @@
   "site": {
     "name": "ForThePeople.in",
     "tagline": "Your District. Your Data. Your Right.",
-    "disclaimer": "ForThePeople.in is an independent citizen transparency initiative. This is NOT an official government website. All data is sourced from publicly available government portals under India's Open Data Policy (NDSAP)."
+    "disclaimer": "ForThePeople.in is an independent citizen transparency initiative. This is NOT an official government website. All data is sourced from publicly available government portals under India's Open Data Policy (NDSAP).",
+    "notice": "ForThePeople.in is NOT an official government website. Data is sourced from publicly available government portals under India's Open Data Policy (NDSAP).",
+    "verifyNotice": "Always verify critical information at the original government portal."
   },
   "nav": {
     "home": "Home",
@@ -10,13 +12,57 @@
     "language": "Language",
     "about": "About",
     "support": "Support",
-    "feedback": "Feedback"
+    "feedback": "Feedback",
+    "vote": "Vote on Features",
+    "india": "India",
+    "selectState": "Select State",
+    "selectDistrict": "Select District",
+    "selectLanguage": "Select Language",
+    "contribute": "Contribute",
+    "privacy": "Privacy",
+    "disclaimer": "Disclaimer"
+  },
+  "home": {
+    "districtsLive": "Districts LIVE",
+    "dashboards": "Dashboards / District",
+    "dataPoints": "Data Points Tracked",
+    "districtsComing": "Districts Coming",
+    "lastUpdated": "Last Updated",
+    "live": "Live",
+    "refreshNotice": "Data refreshes every 5–30 minutes from official government portals",
+    "howItWorks": "How It Works",
+    "step1Title": "We Collect",
+    "step1Desc": "Data from government portals every 5–30 minutes",
+    "step2Title": "We Organize",
+    "step2Desc": "Into 29 dashboards with charts & maps",
+    "step3Title": "You See",
+    "step3Desc": "Real-time district data. Free. Open source. Yours.",
+    "liveDataTitle": "Live Data — Right Now",
+    "cropPricesTitle": "Today's Crop Prices",
+    "allPrices": "All prices →",
+    "damLevelsTitle": "Dam Levels",
+    "fullReport": "Full report →",
+    "latestNewsTitle": "Latest News",
+    "allNews": "All news →",
+    "weatherTitle": "Weather",
+    "fullForecast": "Full forecast →",
+    "expandingTitle": "Expanding to 780+ Districts",
+    "liveStatus": "{count} / 780 live",
+    "mostRequested": "Most requested: {district}, {state} ({count} requests)",
+    "requestSubmitted": "Request submitted! We'll prioritise {district}.",
+    "requestButton": "Request →",
+    "voteFeatures": "Vote on upcoming features"
   },
   "map": {
     "title": "India — Select Your District",
     "comingSoon": "Coming Soon",
     "activeState": "Active",
-    "selectDistrict": "Select a district to explore"
+    "selectDistrict": "Select a district to explore",
+    "loading": "Loading map...",
+    "unavailable": "Map unavailable",
+    "selectFromList": "Select your district from the list →",
+    "clickState": "Click a state to explore",
+    "tapState": "Tap a state to explore"
   },
   "district": {
     "overview": "Overview",
@@ -74,6 +120,11 @@
   },
   "footer": {
     "disclaimer": "Independent citizen initiative. NOT an official government website. Data under NDSAP.",
-    "builtBy": "Built by Jayanth M B"
+    "builtBy": "Built by Jayanth M B",
+    "dataPolicy": "Data sourced under NDSAP Open Data Policy",
+    "citizensNotice": "Built for the citizens of India",
+    "liveDistricts": "LIVE — {count} Districts",
+    "supportCTA": "❤️ Support — ₹1.50/day serves one district",
+    "new": "NEW"
   }
 }

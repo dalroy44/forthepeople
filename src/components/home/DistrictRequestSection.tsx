@@ -10,6 +10,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { INDIA_STATES } from "@/lib/constants/districts";
+import { useTranslations } from "next-intl";
 
 interface TopRequest {
   id: string;
@@ -19,6 +20,8 @@ interface TopRequest {
 }
 
 export default function DistrictRequestSection() {
+  const t = useTranslations("home");
+  const tNav = useTranslations("nav");
   const queryClient = useQueryClient();
   const [selectedState, setSelectedState] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
@@ -69,10 +72,10 @@ export default function DistrictRequestSection() {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}>
-            Expanding to 780+ Districts
+            {t("expandingTitle")}
           </span>
           <span style={{ fontSize: 11, color: "#9B9B9B", fontFamily: "var(--font-mono, monospace)" }}>
-            {activeCount} / 780 live
+            {t("liveStatus", { count: activeCount })}
           </span>
         </div>
         <div style={{ background: "#F5F5F0", borderRadius: 4, height: 6, overflow: "hidden", marginBottom: 12 }}>
@@ -89,7 +92,7 @@ export default function DistrictRequestSection() {
 
         {topRequest && (
           <div style={{ fontSize: 11, color: "#F59E0B", fontWeight: 600, marginBottom: 12 }}>
-            🔥 Most requested: {topRequest.districtName}, {topRequest.stateName} ({topRequest.requestCount} requests)
+            🔥 {t("mostRequested", { district: topRequest.districtName, state: topRequest.stateName, count: topRequest.requestCount })}
           </div>
         )}
 
@@ -106,7 +109,7 @@ export default function DistrictRequestSection() {
               textAlign: "center",
             }}
           >
-            ✓ Request submitted! We&apos;ll prioritise {selectedDistrict}.
+            ✓ {t("requestSubmitted", { district: selectedDistrict })}
           </div>
         ) : (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -125,7 +128,7 @@ export default function DistrictRequestSection() {
                 outline: "none",
               }}
             >
-              <option value="">Select state</option>
+              <option value="">{tNav("selectState")}</option>
               {INDIA_STATES.map((s) => (
                 <option key={s.slug} value={s.name}>{s.name}</option>
               ))}
@@ -148,7 +151,7 @@ export default function DistrictRequestSection() {
                 opacity: !selectedState ? 0.5 : 1,
               }}
             >
-              <option value="">Select district</option>
+              <option value="">{tNav("selectDistrict")}</option>
               {lockedDistricts.map((d) => (
                 <option key={d.slug} value={d.name}>{d.name}</option>
               ))}
@@ -170,7 +173,7 @@ export default function DistrictRequestSection() {
                 minHeight: 44,
               }}
             >
-              {mutation.isPending ? "…" : "Request →"}
+              {mutation.isPending ? "…" : t("requestButton")}
             </button>
           </div>
         )}
@@ -186,7 +189,7 @@ export default function DistrictRequestSection() {
               color: "#7C3AED",
             }}
           >
-            <span>🗳️ Vote on upcoming features</span>
+            <span>🗳️ {t("voteFeatures")}</span>
             <span style={{ fontSize: 11, opacity: 0.8 }}>→</span>
           </Link>
         </div>

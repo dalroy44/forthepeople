@@ -8,6 +8,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useRef, useEffect } from "react";
 import { Search, Globe, ChevronDown, Menu, Lock, Users, Github, Heart } from "lucide-react";
 import { INDIA_STATES, getState, getDistrict, PILOT_STATE, PILOT_DISTRICT } from "@/lib/constants/districts";
@@ -16,58 +17,58 @@ import MobileSidebar from "./MobileSidebar";
 
 // ── Static search index for modules + common queries ───────
 const MODULE_INDEX = [
-  { label: "Weather & Rainfall",    path: "weather",          emoji: "🌦️" },
-  { label: "Crop Prices",           path: "crops",            emoji: "🌾" },
-  { label: "Water & Dams",          path: "water",            emoji: "💧" },
-  { label: "Finance & Budget",      path: "finance",          emoji: "💰" },
-  { label: "Government Schemes",    path: "schemes",          emoji: "📋" },
-  { label: "Schools & Education",   path: "schools",          emoji: "🎓" },
-  { label: "Hospitals & Health",    path: "health",           emoji: "🏥" },
-  { label: "Elections",             path: "elections",        emoji: "🗳️" },
-  { label: "RTI",                   path: "rti",              emoji: "📄" },
-  { label: "Police & Crime",        path: "police",           emoji: "🚔" },
-  { label: "Housing",               path: "housing",          emoji: "🏠" },
+  { label: "Weather & Rainfall", path: "weather", emoji: "🌦️" },
+  { label: "Crop Prices", path: "crops", emoji: "🌾" },
+  { label: "Water & Dams", path: "water", emoji: "💧" },
+  { label: "Finance & Budget", path: "finance", emoji: "💰" },
+  { label: "Government Schemes", path: "schemes", emoji: "📋" },
+  { label: "Schools & Education", path: "schools", emoji: "🎓" },
+  { label: "Hospitals & Health", path: "health", emoji: "🏥" },
+  { label: "Elections", path: "elections", emoji: "🗳️" },
+  { label: "RTI", path: "rti", emoji: "📄" },
+  { label: "Police & Crime", path: "police", emoji: "🚔" },
+  { label: "Housing", path: "housing", emoji: "🏠" },
   { label: "MGNREGA / Gram Panchayat", path: "gram-panchayat", emoji: "🏛️" },
-  { label: "JJM Water Supply",      path: "jjm",              emoji: "🚿" },
-  { label: "Power & Outages",       path: "power",            emoji: "⚡" },
-  { label: "Transport & Roads",     path: "transport",        emoji: "🚌" },
-  { label: "News & Updates",        path: "news",             emoji: "📰" },
-  { label: "Leadership & Officials", path: "leadership",      emoji: "👥" },
-  { label: "Local Alerts",          path: "alerts",           emoji: "🚨" },
-  { label: "Citizen Corner",        path: "citizen-corner",   emoji: "🤝" },
-  { label: "Famous Personalities",  path: "famous-personalities", emoji: "⭐" },
-  { label: "Courts & Justice",      path: "courts",           emoji: "⚖️" },
-  { label: "Industries",            path: "industries",       emoji: "🏭" },
-  { label: "Infrastructure",        path: "infrastructure",   emoji: "🔧" },
-  { label: "Soil & Agriculture",    path: "farm",             emoji: "🌱" },
-  { label: "Population",            path: "population",       emoji: "👥" },
+  { label: "JJM Water Supply", path: "jjm", emoji: "🚿" },
+  { label: "Power & Outages", path: "power", emoji: "⚡" },
+  { label: "Transport & Roads", path: "transport", emoji: "🚌" },
+  { label: "News & Updates", path: "news", emoji: "📰" },
+  { label: "Leadership & Officials", path: "leadership", emoji: "👥" },
+  { label: "Local Alerts", path: "alerts", emoji: "🚨" },
+  { label: "Citizen Corner", path: "citizen-corner", emoji: "🤝" },
+  { label: "Famous Personalities", path: "famous-personalities", emoji: "⭐" },
+  { label: "Courts & Justice", path: "courts", emoji: "⚖️" },
+  { label: "Industries", path: "industries", emoji: "🏭" },
+  { label: "Infrastructure", path: "infrastructure", emoji: "🔧" },
+  { label: "Soil & Agriculture", path: "farm", emoji: "🌱" },
+  { label: "Population", path: "population", emoji: "👥" },
 ];
 
 // ── All 22 scheduled languages + English ──────────────────
 const LANGUAGES = [
-  { code: "en", name: "English",   nameLocal: "English",        active: true },
-  { code: "kn", name: "Kannada",   nameLocal: "ಕನ್ನಡ",          active: false },
-  { code: "hi", name: "Hindi",     nameLocal: "हिन्दी",           active: false },
-  { code: "te", name: "Telugu",    nameLocal: "తెలుగు",          active: false },
-  { code: "ta", name: "Tamil",     nameLocal: "தமிழ்",            active: false },
-  { code: "ml", name: "Malayalam", nameLocal: "മലയാളം",          active: false },
-  { code: "mr", name: "Marathi",   nameLocal: "मराठी",           active: false },
-  { code: "bn", name: "Bengali",   nameLocal: "বাংলা",           active: false },
-  { code: "gu", name: "Gujarati",  nameLocal: "ગુજરાતી",         active: false },
-  { code: "pa", name: "Punjabi",   nameLocal: "ਪੰਜਾਬੀ",         active: false },
-  { code: "or", name: "Odia",      nameLocal: "ଓଡ଼ିଆ",           active: false },
-  { code: "as", name: "Assamese",  nameLocal: "অসমীয়া",         active: false },
-  { code: "ur", name: "Urdu",      nameLocal: "اردو",            active: false },
-  { code: "sa", name: "Sanskrit",  nameLocal: "संस्कृतम्",        active: false },
-  { code: "ne", name: "Nepali",    nameLocal: "नेपाली",          active: false },
-  { code: "sd", name: "Sindhi",    nameLocal: "سنڌي",           active: false },
-  { code: "ks", name: "Kashmiri",  nameLocal: "कॉशुर",           active: false },
-  { code: "doi", name: "Dogri",    nameLocal: "डोगरी",           active: false },
-  { code: "kok", name: "Konkani",  nameLocal: "कोंकणी",          active: false },
-  { code: "mni", name: "Manipuri", nameLocal: "মৈতৈলোন্",        active: false },
-  { code: "brx", name: "Bodo",     nameLocal: "बड़ो",             active: false },
-  { code: "sat", name: "Santali",  nameLocal: "ᱥᱟᱱᱛᱟᱲᱤ",        active: false },
-  { code: "mai", name: "Maithili", nameLocal: "मैथिली",          active: false },
+  { code: "en", name: "English", nameLocal: "English", active: true },
+  { code: "kn", name: "Kannada", nameLocal: "ಕನ್ನಡ", active: true },
+  { code: "hi", name: "Hindi", nameLocal: "हिन्दी", active: false },
+  { code: "te", name: "Telugu", nameLocal: "తెలుగు", active: false },
+  { code: "ta", name: "Tamil", nameLocal: "தமிழ்", active: false },
+  { code: "ml", name: "Malayalam", nameLocal: "മലയാളം", active: false },
+  { code: "mr", name: "Marathi", nameLocal: "मराठी", active: false },
+  { code: "bn", name: "Bengali", nameLocal: "বাংলা", active: false },
+  { code: "gu", name: "Gujarati", nameLocal: "ગુજરાતી", active: false },
+  { code: "pa", name: "Punjabi", nameLocal: "ਪੰਜਾਬੀ", active: false },
+  { code: "or", name: "Odia", nameLocal: "ଓଡ଼ିଆ", active: false },
+  { code: "as", name: "Assamese", nameLocal: "অসমীয়া", active: false },
+  { code: "ur", name: "Urdu", nameLocal: "اردو", active: false },
+  { code: "sa", name: "Sanskrit", nameLocal: "संस्कृतम्", active: false },
+  { code: "ne", name: "Nepali", nameLocal: "नेपाली", active: false },
+  { code: "sd", name: "Sindhi", nameLocal: "سنڌي", active: false },
+  { code: "ks", name: "Kashmiri", nameLocal: "कॉशुर", active: false },
+  { code: "doi", name: "Dogri", nameLocal: "डोगरी", active: false },
+  { code: "kok", name: "Konkani", nameLocal: "कोंकणी", active: false },
+  { code: "mni", name: "Manipuri", nameLocal: "মৈতৈলোন্", active: false },
+  { code: "brx", name: "Bodo", nameLocal: "बड़ो", active: false },
+  { code: "sat", name: "Santali", nameLocal: "ᱥᱟᱱᱛᱟᱲᱤ", active: false },
+  { code: "mai", name: "Maithili", nameLocal: "मैथिली", active: false },
 ];
 
 interface HeaderProps {
@@ -86,6 +87,9 @@ function parsePath(pathname: string) {
 }
 
 export default function Header({ locale }: HeaderProps) {
+  const tNav = useTranslations("nav");
+  const tCommon = useTranslations("common");
+  const tMap = useTranslations("map");
   const pathname = usePathname();
   const router = useRouter();
   const { state: stateSlug, district: districtSlug, taluk: talukSlug } = parsePath(pathname);
@@ -120,388 +124,388 @@ export default function Header({ locale }: HeaderProps) {
   const q = searchQuery.toLowerCase();
   const districtResults = searchQuery.length >= 2
     ? INDIA_STATES.flatMap((s) =>
-        s.active
-          ? s.districts
-              .filter((d) =>
-                d.name.toLowerCase().includes(q) || d.nameLocal.includes(searchQuery)
-              )
-              .map((d) => ({ type: "district" as const, state: s, district: d, label: d.name, sub: s.name }))
-          : []
-      ).slice(0, 5)
+      s.active
+        ? s.districts
+          .filter((d) =>
+            d.name.toLowerCase().includes(q) || d.nameLocal.includes(searchQuery)
+          )
+          .map((d) => ({ type: "district" as const, state: s, district: d, label: d.name, sub: s.name }))
+        : []
+    ).slice(0, 5)
     : [];
 
   const moduleResults = searchQuery.length >= 2
     ? MODULE_INDEX.filter((m) => m.label.toLowerCase().includes(q)).slice(0, 4).map((m) => ({
-        type: "module" as const,
-        ...m,
-        href: districtData
-          ? `/${locale}/${stateSlug}/${districtSlug}/${m.path}`
-          : `/${locale}/${PILOT_STATE}/${PILOT_DISTRICT}/${m.path}`,
-      }))
+      type: "module" as const,
+      ...m,
+      href: districtData
+        ? `/${locale}/${stateSlug}/${districtSlug}/${m.path}`
+        : `/${locale}/${PILOT_STATE}/${PILOT_DISTRICT}/${m.path}`,
+    }))
     : [];
 
   const searchResults = [...districtResults, ...moduleResults];
 
   return (
     <>
-    <header
-      className="ftp-header"
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        background: "#FFFFFF",
-        borderBottom: "1px solid #E8E8E4",
-        height: 56,
-        display: "flex",
-        alignItems: "center",
-        padding: "0 16px",
-        gap: 12,
-      }}
-    >
-      {/* Left hamburger — mobile only, shows when on a district page */}
-      {stateSlug && districtSlug && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open navigation menu"
-          className="md:hidden"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: 44,
-            minHeight: 44,
-            width: 44,
-            height: 44,
-            border: "none",
-            borderRadius: 8,
-            background: "transparent",
-            cursor: "pointer",
-            color: "#1A1A1A",
-            flexShrink: 0,
-          }}
-        >
-          <Menu size={20} />
-        </button>
-      )}
-
-      {/* Logo */}
-      <Link
-        href={`/${locale}`}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          textDecoration: "none",
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ width: 32, height: 32, background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(37,99,235,0.25)", flexShrink: 0 }}>
-          <Users size={16} style={{ color: "white" }} strokeWidth={2.5} />
-        </div>
-        <span
-          style={{ fontWeight: 700, fontSize: 15, color: "#1A1A1A", letterSpacing: "-0.3px" }}
-          className="hidden sm:block"
-        >
-          ForThePeople<span style={{ color: "#2563EB" }}>.in</span>
-        </span>
-        <span
-          style={{ fontWeight: 700, fontSize: 13, color: "#1A1A1A", letterSpacing: "-0.2px" }}
-          className="sm:hidden"
-        >
-          FTP.in
-        </span>
-      </Link>
-
-      {/* Breadcrumb — desktop only */}
-      <nav
-        style={{ alignItems: "center", gap: 4, flex: 1, minWidth: 0, overflow: "visible" }}
-        className="hidden md:flex"
-      >
-        <BreadcrumbItem label="India" href={`/${locale}`} active={!stateSlug} isFirst />
-
-        <BreadcrumbSep />
-        <StateDropdown locale={locale} currentState={stateData} />
-
-        {stateData && (
-          <>
-            <BreadcrumbSep />
-            <DistrictDropdown locale={locale} state={stateData} currentDistrict={districtData} />
-          </>
-        )}
-
-        {districtData && districtData.taluks.length > 0 && (
-          <>
-            <BreadcrumbSep />
-            <TalukDropdown locale={locale} stateSlug={stateSlug!} district={districtData} currentTaluk={talukData} />
-          </>
-        )}
-      </nav>
-
-      {/* Right actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-        {/* Search button */}
-        <button
-          onClick={() => setSearchOpen((v) => !v)}
-          aria-label="Open search (Cmd+K)"
-          aria-keyshortcuts="Meta+k Control+k"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 10px",
-            border: "1px solid #E8E8E4",
-            borderRadius: 8,
-            background: "#FAFAF8",
-            color: "#6B6B6B",
-            fontSize: 13,
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <Search size={14} aria-hidden="true" />
-          <span className="hidden sm:block">Search</span>
-          <span className="hidden md:block" style={{ fontSize: 11, color: "#9B9B9B", background: "#F0F0EC", border: "1px solid #E8E8E4", borderRadius: 4, padding: "1px 5px", fontFamily: "var(--font-mono)" }}>⌘K</span>
-        </button>
-
-        {/* Search overlay */}
-        {searchOpen && (
-          <>
-            <div
-              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 98 }}
-              onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
-              aria-hidden="true"
-            />
-            <div
-              role="dialog"
-              aria-label="Search"
-              aria-modal="true"
-              style={{
-                position: "fixed",
-                top: "72px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "min(560px, 96vw)",
-                background: "#fff",
-                border: "1px solid #E8E8E4",
-                borderRadius: 14,
-                boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
-                zIndex: 99,
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid #E8E8E4" }}>
-                <Search size={16} style={{ color: "#9B9B9B", flexShrink: 0 }} aria-hidden="true" />
-                <input
-                  ref={searchRef}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search districts, modules, data..."
-                  aria-label="Search"
-                  style={{ flex: 1, border: "none", outline: "none", fontSize: 15, color: "#1A1A1A", background: "transparent" }}
-                />
-                <button
-                  onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#9B9B9B", fontSize: 12, flexShrink: 0 }}
-                  aria-label="Close search"
-                >
-                  ESC
-                </button>
-              </div>
-              <div style={{ maxHeight: 400, overflowY: "auto" }}>
-                {searchResults.length > 0 ? (
-                  <>
-                    {districtResults.length > 0 && (
-                      <>
-                        <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "#9B9B9B" }}>Districts</div>
-                        {districtResults.map(({ state, district }) => (
-                          <button
-                            key={district.slug}
-                            onClick={() => { router.push(`/${locale}/${state.slug}/${district.slug}`); setSearchOpen(false); setSearchQuery(""); }}
-                            style={{ display: "flex", alignItems: "center", width: "100%", padding: "9px 16px", border: "none", background: "none", cursor: "pointer", textAlign: "left", gap: 10 }}
-                          >
-                            <span style={{ fontSize: 16, flexShrink: 0 }}>📍</span>
-                            <span style={{ fontSize: 14, color: "#1A1A1A", flex: 1 }}>{district.name}</span>
-                            <span style={{ fontSize: 12, color: "#9B9B9B" }}>{state.name}</span>
-                          </button>
-                        ))}
-                      </>
-                    )}
-                    {moduleResults.length > 0 && (
-                      <>
-                        <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "#9B9B9B" }}>Modules</div>
-                        {moduleResults.map((m) => (
-                          <button
-                            key={m.path}
-                            onClick={() => { router.push(m.href); setSearchOpen(false); setSearchQuery(""); }}
-                            style={{ display: "flex", alignItems: "center", width: "100%", padding: "9px 16px", border: "none", background: "none", cursor: "pointer", textAlign: "left", gap: 10 }}
-                          >
-                            <span style={{ fontSize: 16, flexShrink: 0 }} aria-hidden="true">{m.emoji}</span>
-                            <span style={{ fontSize: 14, color: "#1A1A1A" }}>{m.label}</span>
-                          </button>
-                        ))}
-                      </>
-                    )}
-                  </>
-                ) : searchQuery.length >= 2 ? (
-                  <p style={{ padding: "20px 16px", fontSize: 14, color: "#9B9B9B", textAlign: "center" }}>No results for &ldquo;{searchQuery}&rdquo;</p>
-                ) : (
-                  <div style={{ padding: "16px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "#9B9B9B", marginBottom: 8 }}>Quick Links</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {MODULE_INDEX.slice(0, 8).map((m) => (
-                        <button
-                          key={m.path}
-                          onClick={() => {
-                            const href = districtData
-                              ? `/${locale}/${stateSlug}/${districtSlug}/${m.path}`
-                              : `/${locale}/${PILOT_STATE}/${PILOT_DISTRICT}/${m.path}`;
-                            router.push(href);
-                            setSearchOpen(false);
-                          }}
-                          style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", background: "#F5F5F0", border: "1px solid #E8E8E4", borderRadius: 8, fontSize: 12, color: "#6B6B6B", cursor: "pointer" }}
-                        >
-                          <span aria-hidden="true">{m.emoji}</span> {m.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p style={{ marginTop: 12, fontSize: 12, color: "#9B9B9B" }}>
-                      Type to search 780+ districts and 25 data modules
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* GitHub link — hidden on mobile to save space (available in footer) */}
-        <a
-          href="https://github.com/jayanthmb14/forthepeople"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="View source on GitHub"
-          className="hidden sm:flex"
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            width: 34,
-            height: 34,
-            borderRadius: 8,
-            border: "1px solid #E8E8E4",
-            background: "#FAFAF8",
-            color: "#4B4B4B",
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
-        >
-          <Github size={16} />
-        </a>
-
-        {/* Support — heart CTA */}
-        <Link
-          href={`/${locale}/support`}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            padding: "6px 12px",
-            background: "#FFF1F2",
-            color: "#E11D48",
-            border: "1px solid #FECDD3",
-            borderRadius: 20,
-            fontSize: 12,
-            fontWeight: 700,
-            textDecoration: "none",
-            whiteSpace: "nowrap",
-            letterSpacing: "0.01em",
-            transition: "background 150ms",
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#FFE4E6"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#FFF1F2"; }}
-        >
-          <Heart size={14} fill="#E11D48" />
-          <span className="hidden sm:inline">Support</span>
-        </Link>
-
-        {/* Vote on Features — eye-catching CTA */}
-        <Link
-          href="/en/features"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 5,
-            padding: "6px 12px",
-            background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
-            color: "#FFF",
-            borderRadius: 8,
-            fontSize: 12,
-            fontWeight: 700,
-            textDecoration: "none",
-            whiteSpace: "nowrap",
-            boxShadow: "0 1px 4px rgba(124,58,237,0.3)",
-            letterSpacing: "0.01em",
-          }}
-        >
-          <span aria-hidden="true">🗳️</span>
-          <span className="hidden sm:inline">Vote on Features</span>
-          <span className="sm:hidden">Vote</span>
-        </Link>
-
-        {/* Language selector — all 22 languages */}
-        <LanguageSelector locale={locale} pathname={pathname} />
-
-      </div>
-
-      {/* Mobile sidebar drawer */}
-      <MobileSidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        locale={locale}
-        stateSlug={stateSlug}
-        districtSlug={districtSlug}
-      />
-    </header>
-
-    {/* Mobile breadcrumb strip — sticky below header, visible on mobile only */}
-    {stateSlug && (
-      <nav
-        className="flex md:hidden ftp-mobile-breadcrumb"
-        aria-label="Location breadcrumb"
+      <header
+        className="ftp-header"
         style={{
           position: "sticky",
-          top: 56,
-          zIndex: 49,
-          background: "#FAFAF8",
-          borderBottom: "1px solid #F0F0EC",
+          top: 0,
+          zIndex: 50,
+          background: "#FFFFFF",
+          borderBottom: "1px solid #E8E8E4",
+          height: 56,
+          display: "flex",
           alignItems: "center",
-          gap: 4,
-          padding: "0 12px",
-          height: 36,
-          overflowX: "auto",
-          overflowY: "hidden",
-          whiteSpace: "nowrap",
+          padding: "0 16px",
+          gap: 12,
         }}
       >
-        <Link href={`/${locale}`} style={{ fontSize: 12, color: "#6B6B6B", whiteSpace: "nowrap", flexShrink: 0, padding: "0 2px" }}>
-          🇮🇳
+        {/* Left hamburger — mobile only, shows when on a district page */}
+        {stateSlug && districtSlug && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open navigation menu"
+            className="md:hidden"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: 44,
+              minHeight: 44,
+              width: 44,
+              height: 44,
+              border: "none",
+              borderRadius: 8,
+              background: "transparent",
+              cursor: "pointer",
+              color: "#1A1A1A",
+              flexShrink: 0,
+            }}
+          >
+            <Menu size={20} />
+          </button>
+        )}
+
+        {/* Logo */}
+        <Link
+          href={`/${locale}`}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            textDecoration: "none",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ width: 32, height: 32, background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(37,99,235,0.25)", flexShrink: 0 }}>
+            <Users size={16} style={{ color: "white" }} strokeWidth={2.5} />
+          </div>
+          <span
+            style={{ fontWeight: 700, fontSize: 15, color: "#1A1A1A", letterSpacing: "-0.3px" }}
+            className="hidden sm:block"
+          >
+            ForThePeople<span style={{ color: "#2563EB" }}>.in</span>
+          </span>
+          <span
+            style={{ fontWeight: 700, fontSize: 13, color: "#1A1A1A", letterSpacing: "-0.2px" }}
+            className="sm:hidden"
+          >
+            FTP.in
+          </span>
         </Link>
-        <ChevronDown size={10} style={{ color: "#9B9B9B", transform: "rotate(-90deg)", flexShrink: 0 }} />
-        <StateDropdown locale={locale} currentState={stateData} />
-        {stateData && (
-          <>
-            <ChevronDown size={10} style={{ color: "#9B9B9B", transform: "rotate(-90deg)", flexShrink: 0 }} />
-            <DistrictDropdown locale={locale} state={stateData} currentDistrict={districtData} />
-          </>
-        )}
-        {districtData && districtData.taluks.length > 0 && (
-          <>
-            <ChevronDown size={10} style={{ color: "#9B9B9B", transform: "rotate(-90deg)", flexShrink: 0 }} />
-            <TalukDropdown locale={locale} stateSlug={stateSlug!} district={districtData} currentTaluk={talukData} />
-          </>
-        )}
-      </nav>
-    )}
+
+        {/* Breadcrumb — desktop only */}
+        <nav
+          style={{ alignItems: "center", gap: 4, flex: 1, minWidth: 0, overflow: "visible" }}
+          className="hidden md:flex"
+        >
+          <BreadcrumbItem label={tNav("india")} href={`/${locale}`} active={!stateSlug} isFirst />
+
+          <BreadcrumbSep />
+          <StateDropdown locale={locale} currentState={stateData} />
+
+          {stateData && (
+            <>
+              <BreadcrumbSep />
+              <DistrictDropdown locale={locale} state={stateData} currentDistrict={districtData} />
+            </>
+          )}
+
+          {districtData && districtData.taluks.length > 0 && (
+            <>
+              <BreadcrumbSep />
+              <TalukDropdown locale={locale} stateSlug={stateSlug!} district={districtData} currentTaluk={talukData} />
+            </>
+          )}
+        </nav>
+
+        {/* Right actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+          {/* Search button */}
+          <button
+            onClick={() => setSearchOpen((v) => !v)}
+            aria-label="Open search (Cmd+K)"
+            aria-keyshortcuts="Meta+k Control+k"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 10px",
+              border: "1px solid #E8E8E4",
+              borderRadius: 8,
+              background: "#FAFAF8",
+              color: "#6B6B6B",
+              fontSize: 13,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Search size={14} aria-hidden="true" />
+            <span className="hidden sm:block">{tNav("search")}</span>
+            <span className="hidden md:block" style={{ fontSize: 11, color: "#9B9B9B", background: "#F0F0EC", border: "1px solid #E8E8E4", borderRadius: 4, padding: "1px 5px", fontFamily: "var(--font-mono)" }}>⌘K</span>
+          </button>
+
+          {/* Search overlay */}
+          {searchOpen && (
+            <>
+              <div
+                style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 98 }}
+                onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
+                aria-hidden="true"
+              />
+              <div
+                role="dialog"
+                aria-label="Search"
+                aria-modal="true"
+                style={{
+                  position: "fixed",
+                  top: "72px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "min(560px, 96vw)",
+                  background: "#fff",
+                  border: "1px solid #E8E8E4",
+                  borderRadius: 14,
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+                  zIndex: 99,
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid #E8E8E4" }}>
+                  <Search size={16} style={{ color: "#9B9B9B", flexShrink: 0 }} aria-hidden="true" />
+                  <input
+                    ref={searchRef}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={tNav("search")}
+                    aria-label="Search"
+                    style={{ flex: 1, border: "none", outline: "none", fontSize: 15, color: "#1A1A1A", background: "transparent" }}
+                  />
+                  <button
+                    onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#9B9B9B", fontSize: 12, flexShrink: 0 }}
+                    aria-label="Close search"
+                  >
+                    ESC
+                  </button>
+                </div>
+                <div style={{ maxHeight: 400, overflowY: "auto" }}>
+                  {searchResults.length > 0 ? (
+                    <>
+                      {districtResults.length > 0 && (
+                        <>
+                          <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "#9B9B9B" }}>Districts</div>
+                          {districtResults.map(({ state, district }) => (
+                            <button
+                              key={district.slug}
+                              onClick={() => { router.push(`/${locale}/${state.slug}/${district.slug}`); setSearchOpen(false); setSearchQuery(""); }}
+                              style={{ display: "flex", alignItems: "center", width: "100%", padding: "9px 16px", border: "none", background: "none", cursor: "pointer", textAlign: "left", gap: 10 }}
+                            >
+                              <span style={{ fontSize: 16, flexShrink: 0 }}>📍</span>
+                              <span style={{ fontSize: 14, color: "#1A1A1A", flex: 1 }}>{district.name}</span>
+                              <span style={{ fontSize: 12, color: "#9B9B9B" }}>{state.name}</span>
+                            </button>
+                          ))}
+                        </>
+                      )}
+                      {moduleResults.length > 0 && (
+                        <>
+                          <div style={{ padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "#9B9B9B" }}>Modules</div>
+                          {moduleResults.map((m) => (
+                            <button
+                              key={m.path}
+                              onClick={() => { router.push(m.href); setSearchOpen(false); setSearchQuery(""); }}
+                              style={{ display: "flex", alignItems: "center", width: "100%", padding: "9px 16px", border: "none", background: "none", cursor: "pointer", textAlign: "left", gap: 10 }}
+                            >
+                              <span style={{ fontSize: 16, flexShrink: 0 }} aria-hidden="true">{m.emoji}</span>
+                              <span style={{ fontSize: 14, color: "#1A1A1A" }}>{m.label}</span>
+                            </button>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  ) : searchQuery.length >= 2 ? (
+                    <p style={{ padding: "20px 16px", fontSize: 14, color: "#9B9B9B", textAlign: "center" }}>No results for &ldquo;{searchQuery}&rdquo;</p>
+                  ) : (
+                    <div style={{ padding: "16px" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "#9B9B9B", marginBottom: 8 }}>Quick Links</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {MODULE_INDEX.slice(0, 8).map((m) => (
+                          <button
+                            key={m.path}
+                            onClick={() => {
+                              const href = districtData
+                                ? `/${locale}/${stateSlug}/${districtSlug}/${m.path}`
+                                : `/${locale}/${PILOT_STATE}/${PILOT_DISTRICT}/${m.path}`;
+                              router.push(href);
+                              setSearchOpen(false);
+                            }}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", background: "#F5F5F0", border: "1px solid #E8E8E4", borderRadius: 8, fontSize: 12, color: "#6B6B6B", cursor: "pointer" }}
+                          >
+                            <span aria-hidden="true">{m.emoji}</span> {m.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p style={{ marginTop: 12, fontSize: 12, color: "#9B9B9B" }}>
+                        Type to search 780+ districts and 25 data modules
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* GitHub link — hidden on mobile to save space (available in footer) */}
+          <a
+            href="https://github.com/jayanthmb14/forthepeople"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View source on GitHub"
+            className="hidden sm:flex"
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              width: 34,
+              height: 34,
+              borderRadius: 8,
+              border: "1px solid #E8E8E4",
+              background: "#FAFAF8",
+              color: "#4B4B4B",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <Github size={16} />
+          </a>
+
+          {/* Support — heart CTA */}
+          <Link
+            href={`/${locale}/support`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "6px 12px",
+              background: "#FFF1F2",
+              color: "#E11D48",
+              border: "1px solid #FECDD3",
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 700,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+              letterSpacing: "0.01em",
+              transition: "background 150ms",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#FFE4E6"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#FFF1F2"; }}
+          >
+            <Heart size={14} fill="#E11D48" />
+            <span className="hidden sm:inline">{tNav("support")}</span>
+          </Link>
+
+          {/* Vote on Features — eye-catching CTA */}
+          <Link
+            href={`/${locale}/features`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "6px 12px",
+              background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
+              color: "#FFF",
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 700,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+              boxShadow: "0 1px 4px rgba(124,58,237,0.3)",
+              letterSpacing: "0.01em",
+            }}
+          >
+            <span aria-hidden="true">🗳️</span>
+            <span className="hidden sm:inline">{tNav("vote")}</span>
+            <span className="sm:hidden">Vote</span>
+          </Link>
+
+          {/* Language selector — all 22 languages */}
+          <LanguageSelector locale={locale} pathname={pathname} />
+
+        </div>
+
+        {/* Mobile sidebar drawer */}
+        <MobileSidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          locale={locale}
+          stateSlug={stateSlug}
+          districtSlug={districtSlug}
+        />
+      </header>
+
+      {/* Mobile breadcrumb strip — sticky below header, visible on mobile only */}
+      {stateSlug && (
+        <nav
+          className="flex md:hidden ftp-mobile-breadcrumb"
+          aria-label="Location breadcrumb"
+          style={{
+            position: "sticky",
+            top: 56,
+            zIndex: 49,
+            background: "#FAFAF8",
+            borderBottom: "1px solid #F0F0EC",
+            alignItems: "center",
+            gap: 4,
+            padding: "0 12px",
+            height: 36,
+            overflowX: "auto",
+            overflowY: "hidden",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <Link href={`/${locale}`} style={{ fontSize: 12, color: "#6B6B6B", whiteSpace: "nowrap", flexShrink: 0, padding: "0 2px" }}>
+            🇮🇳
+          </Link>
+          <ChevronDown size={10} style={{ color: "#9B9B9B", transform: "rotate(-90deg)", flexShrink: 0 }} />
+          <StateDropdown locale={locale} currentState={stateData} />
+          {stateData && (
+            <>
+              <ChevronDown size={10} style={{ color: "#9B9B9B", transform: "rotate(-90deg)", flexShrink: 0 }} />
+              <DistrictDropdown locale={locale} state={stateData} currentDistrict={districtData} />
+            </>
+          )}
+          {districtData && districtData.taluks.length > 0 && (
+            <>
+              <ChevronDown size={10} style={{ color: "#9B9B9B", transform: "rotate(-90deg)", flexShrink: 0 }} />
+              <TalukDropdown locale={locale} stateSlug={stateSlug!} district={districtData} currentTaluk={talukData} />
+            </>
+          )}
+        </nav>
+      )}
     </>
   );
 }
@@ -524,7 +528,7 @@ function BreadcrumbItem({ label, href, active, isFirst }: {
         borderRadius: 4,
       }}
     >
-      {isFirst ? "🇮🇳 India" : label}
+      {isFirst ? `🇮🇳 ${label}` : label}
     </Link>
   );
 }
@@ -546,8 +550,9 @@ function StateDropdown({ locale, currentState }: {
   const [filter, setFilter] = useState("");
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const tNav = useTranslations("nav");
 
-  const label = currentState ? currentState.name : "Select State";
+  const label = currentState ? currentState.name : tNav("selectState");
   const filtered = INDIA_STATES.filter((s) =>
     !filter || s.name.toLowerCase().includes(filter.toLowerCase())
   );
@@ -604,7 +609,7 @@ function StateDropdown({ locale, currentState }: {
                 ref={inputRef}
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                placeholder="Search state…"
+                placeholder={`${tNav("search")}...`}
                 style={{ width: "100%", padding: "5px 8px", border: "1px solid #E8E8E4", borderRadius: 6, fontSize: 12, outline: "none", background: "#FAFAF8" }}
               />
             </div>
@@ -655,8 +660,9 @@ function DistrictDropdown({ locale, state, currentDistrict }: {
   const [filter, setFilter] = useState("");
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const tNav = useTranslations("nav");
 
-  const label = currentDistrict ? currentDistrict.name : "Select District";
+  const label = currentDistrict ? currentDistrict.name : tNav("selectDistrict");
   const filtered = state.districts.filter((d) =>
     !filter || d.name.toLowerCase().includes(filter.toLowerCase())
   );
@@ -713,7 +719,7 @@ function DistrictDropdown({ locale, state, currentDistrict }: {
                 ref={inputRef}
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                placeholder="Search district…"
+                placeholder={`${tNav("search")}...`}
                 style={{ width: "100%", padding: "5px 8px", border: "1px solid #E8E8E4", borderRadius: 6, fontSize: 12, outline: "none", background: "#FAFAF8" }}
               />
               <div style={{ fontSize: 10, color: "#9B9B9B", marginTop: 4, paddingLeft: 2 }}>
@@ -844,6 +850,8 @@ function TalukDropdown({ locale, stateSlug, district, currentTaluk }: {
 function LanguageSelector({ locale, pathname }: { locale: string; pathname: string }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const tNav = useTranslations("nav");
+  const tMap = useTranslations("map");
 
   const currentLang = LANGUAGES.find((l) => l.code === locale) ?? LANGUAGES[0];
 
@@ -896,13 +904,13 @@ function LanguageSelector({ locale, pathname }: { locale: string; pathname: stri
             }}
           >
             <div style={{ padding: "6px 12px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#9B9B9B" }}>
-              Select Language
+              {tNav("selectLanguage")}
             </div>
             {LANGUAGES.map((lang) => (
               <button
                 key={lang.code}
                 onClick={() => { if (lang.active) handleSelect(lang.code); }}
-                title={lang.active ? undefined : "Coming soon"}
+                title={lang.active ? undefined : tMap("comingSoon")}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -926,7 +934,7 @@ function LanguageSelector({ locale, pathname }: { locale: string; pathname: stri
                   </span>
                 </div>
                 <span style={{ fontSize: 11, color: "#9B9B9B" }}>
-                  {lang.active ? lang.name : "Soon"}
+                  {lang.active ? lang.name : "..."}
                 </span>
               </button>
             ))}

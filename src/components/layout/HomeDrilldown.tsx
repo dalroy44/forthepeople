@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Search, ArrowRight, MapPin } from "lucide-react";
 import { INDIA_STATES } from "@/lib/constants/districts";
+import { useTranslations } from "next-intl";
 
 // Districts activated within the last 30 days get a "NEW" badge
 const DISTRICT_ACTIVATED_AT: Record<string, string> = {
@@ -28,41 +29,35 @@ import LiveDataPreview from "@/components/home/LiveDataPreview";
 import HowItWorks from "@/components/home/HowItWorks";
 import DistrictRequestSection from "@/components/home/DistrictRequestSection";
 
+function MapLoading() {
+  return (
+    <div style={{ width: "100%", minHeight: 300, background: "#F5F7FF", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#9B9B9B", fontSize: 13 }}>
+      Loading...
+    </div>
+  );
+}
+
 const DrillDownMap = dynamic(() => import("@/components/map/DrillDownMap"), {
   ssr: false,
-  loading: () => (
-    <div
-      style={{
-        width: "100%",
-        minHeight: 300,
-        background: "#F5F7FF",
-        borderRadius: 12,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#9B9B9B",
-        fontSize: 13,
-      }}
-    >
-      Loading map…
-    </div>
-  ),
+  loading: MapLoading
 });
 
+function MapErrorUI({ unavailable, selectFromList }: { unavailable: string; selectFromList: string }) {
+  return (
+    <div style={{ width: "100%", height: "100%", minHeight: 300, background: "#F5F7FF", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "#9B9B9B", fontSize: 13 }}>
+      <span style={{ fontSize: 28 }}>🗺️</span>
+      <span>{unavailable}</span>
+      <span style={{ fontSize: 11 }}>{selectFromList}</span>
+    </div>
+  );
+}
+
 // Error boundary so a map crash never brings down the whole page
-class MapErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class MapErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
   render() {
-    if (this.state.failed) {
-      return (
-        <div style={{ width: "100%", height: "100%", minHeight: 300, background: "#F5F7FF", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "#9B9B9B", fontSize: 13 }}>
-          <span style={{ fontSize: 28 }}>🗺️</span>
-          <span>Map unavailable</span>
-          <span style={{ fontSize: 11 }}>Select your district from the list →</span>
-        </div>
-      );
-    }
+    if (this.state.failed) return this.props.fallback;
     return this.props.children;
   }
 }
@@ -97,6 +92,9 @@ function gradeColor(grade: string): { bg: string; text: string } {
 }
 
 export default function HomeDrilldown({ locale }: HomeDrilldownProps) {
+  const tMap = useTranslations("map");
+  const tNav = useTranslations("nav");
+  const tFooter = useTranslations("footer");
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: previewData } = useQuery<PreviewResponse>({
@@ -110,12 +108,12 @@ export default function HomeDrilldown({ locale }: HomeDrilldownProps) {
   );
   const filtered = searchQuery.length >= 2
     ? allDistricts
-        .filter(({ district }) =>
-          district.active &&
-          (district.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            district.nameLocal.includes(searchQuery))
-        )
-        .slice(0, 5)
+      .filter(({ district }) =>
+        district.active &&
+        (district.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          district.nameLocal.includes(searchQuery))
+      )
+      .slice(0, 5)
     : [];
 
   const activeDistricts = INDIA_STATES.flatMap((s) =>
@@ -140,9 +138,8 @@ export default function HomeDrilldown({ locale }: HomeDrilldownProps) {
               textTransform: "uppercase", color: "#9B9B9B",
             }}
           >
-            <span className="hidden md:inline">Click</span>
-            <span className="md:hidden">Tap</span>
-            {" "}a state to explore
+            <span className="hidden md:inline">{tMap("clickState")}</span>
+            <span className="md:hidden">{tMap("tapState")}</span>
           </span>
         </div>
 
@@ -150,7 +147,7 @@ export default function HomeDrilldown({ locale }: HomeDrilldownProps) {
           {/* Map column */}
           <div>
             <div className="touch-pan-y md:touch-auto">
-              <MapErrorBoundary>
+              <MapErrorBoundary fallback={<MapErrorUI unavailable={tMap("unavailable")} selectFromList={tMap("selectFromList")} />}>
                 <DrillDownMap locale={locale} />
               </MapErrorBoundary>
             </div>
@@ -172,7 +169,7 @@ export default function HomeDrilldown({ locale }: HomeDrilldownProps) {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search your district…"
+                  placeholder={tNav("search")}
                   style={{
                     flex: 1, border: "none", outline: "none",
                     fontSize: 15, color: "#1A1A1A", background: "transparent",
@@ -203,7 +200,7 @@ export default function HomeDrilldown({ locale }: HomeDrilldownProps) {
                         </span>
                       )}
                       {isNewDistrict(district.slug) && (
-                        <span style={{ fontSize: 9, fontWeight: 500, padding: "1px 6px", background: "#D1FAE5", color: "#065F46", borderRadius: 10, marginLeft: 5 }}>NEW</span>
+                        <span style={{ fontSize: 9, fontWeight: 500, padding: "1px 6px", background: "#D1FAE5", color: "#065F46", borderRadius: 10, marginLeft: 5 }}>{tFooter("new")}</span>
                       )}
                       <span style={{ fontSize: 12, color: "#9B9B9B", marginLeft: "auto" }}>{state.name}</span>
                       <ArrowRight size={12} style={{ color: "#C0C0C0", marginLeft: 6 }} />
@@ -247,12 +244,12 @@ export default function HomeDrilldown({ locale }: HomeDrilldownProps) {
               textDecoration: "none", minHeight: 44,
             }}
           >
-            ❤️ Support — ₹1.50/day serves one district
+            {tFooter("supportCTA")}
           </Link>
         </div>
 
         {/* Disclaimer */}
-        <DisclaimerStrip />
+        <DisclaimerStrip locale={locale} />
       </div>
     </main>
   );
@@ -267,12 +264,13 @@ function ActiveDistrictsCard({
   activeDistricts: Array<(typeof INDIA_STATES)[number]["districts"][number] & { _stateSlug: string }>;
   districtPreviews: DistrictPreview[];
 }) {
+  const tFooter = useTranslations("footer");
   return (
     <div style={{ background: "#FFFFFF", border: "1px solid #E8E8E4", borderRadius: 16, padding: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 20, padding: "3px 10px", fontSize: 11, color: "#1D4ED8", fontWeight: 600 }}>
           <span style={{ width: 6, height: 6, background: "#22C55E", borderRadius: "50%", display: "inline-block" }} />
-          LIVE — {activeDistricts.length} Districts
+          {tFooter("liveDistricts", { count: activeDistricts.length })}
         </span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -305,7 +303,7 @@ function ActiveDistrictsCard({
                       background: "#D1FAE5", color: "#065F46",
                       borderRadius: 10,
                     }}>
-                      NEW
+                      {tFooter("new")}
                     </span>
                   )}
                 </div>
@@ -344,7 +342,10 @@ function ActiveDistrictsCard({
   );
 }
 
-function DisclaimerStrip() {
+function DisclaimerStrip({ locale }: { locale: string }) {
+  const tFooter = useTranslations("footer");
+  const tNav = useTranslations("nav");
+
   return (
     <div
       style={{
@@ -356,11 +357,11 @@ function DisclaimerStrip() {
       }}
     >
       <span>
-        <strong style={{ color: "#6B6B6B" }}>ForThePeople.in</strong> — Independent. NOT an official government website. Data under NDSAP.{" "}
-        <Link href="/disclaimer" style={{ color: "#2563EB", textDecoration: "none" }}>Disclaimer →</Link>
+        <strong style={{ color: "#6B6B6B" }}>ForThePeople.in</strong> — {tFooter("disclaimer")}
+        <Link href={`/${locale}/disclaimer`} style={{ color: "#2563EB", textDecoration: "none" }}> {tNav("disclaimer")} →</Link>
       </span>
       <span>
-        Built by{" "}
+        {tFooter("builtBy").split("Jayanth")[0]}
         <a href="https://www.instagram.com/jayanth_m_b/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563EB", textDecoration: "none" }}>
           Jayanth M B
         </a>

@@ -4,22 +4,26 @@
  * https://github.com/jayanthmb14/forthepeople
  */
 
+"use client";
+import { useTranslations } from "next-intl";
+
 export default function HowItWorks() {
+  const t = useTranslations("home");
   const steps = [
     {
       icon: "📡",
-      title: "We Collect",
-      desc: "Data from government portals every 5–30 minutes",
+      title: t("step1Title"),
+      desc: t("step1Desc"),
     },
     {
       icon: "📊",
-      title: "We Organize",
-      desc: "Into 29 dashboards with charts & maps",
+      title: t("step2Title"),
+      desc: t("step2Desc"),
     },
     {
       icon: "👁️",
-      title: "You See",
-      desc: "Real-time district data. Free. Open source. Yours.",
+      title: t("step3Title"),
+      desc: t("step3Desc"),
     },
   ];
 
@@ -35,27 +39,16 @@ export default function HowItWorks() {
           marginBottom: 12,
         }}
       >
-        How It Works
+        {t("howItWorks")}
       </div>
       <div style={{ display: "flex", gap: 12 }}>
         {steps.map((s, i) => (
-          <div key={s.title} style={{ flex: 1, textAlign: "center" }}>
+          <div key={i} style={{ flex: 1, textAlign: "center" }}>
             <div style={{ fontSize: 28, marginBottom: 6 }}>{s.icon}</div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", marginBottom: 4 }}>
               {s.title}
             </div>
             <div style={{ fontSize: 11, color: "#6B6B6B", lineHeight: 1.5 }}>{s.desc}</div>
-            {i < steps.length - 1 && (
-              <div
-                style={{
-                  position: "absolute",
-                  right: "-6px",
-                  top: "50%",
-                  fontSize: 16,
-                  color: "#E8E8E4",
-                }}
-              />
-            )}
           </div>
         ))}
       </div>

@@ -9,8 +9,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import FeedbackModal from "@/components/common/FeedbackModal";
+import { useTranslations, useLocale } from "next-intl";
 
 export default function Footer() {
+  const tFooter = useTranslations("footer");
+  const tNav = useTranslations("nav");
+  const locale = useLocale();
   const [time, setTime] = useState("");
 
   useEffect(() => {
@@ -53,7 +57,7 @@ export default function Footer() {
         }}
       >
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          Data sourced under NDSAP Open Data Policy &nbsp;·&nbsp; Built for the citizens of India
+          {tFooter("dataPolicy")} &nbsp;·&nbsp; {tFooter("citizensNotice")}
         </span>
         <span
           style={{
@@ -86,24 +90,24 @@ export default function Footer() {
         >
           <strong style={{ color: "#6B6B6B" }}>ForThePeople.in</strong>
           {" — "}
-          <span className="hidden sm:inline">Independent. NOT an official government website. Data under NDSAP. </span>
-          <Link href="/disclaimer" style={{ color: "#2563EB", textDecoration: "none" }}>
-            Disclaimer
+          <span className="hidden sm:inline">{tFooter("disclaimer")} </span>
+          <Link href={`/${locale}/disclaimer`} style={{ color: "#2563EB", textDecoration: "none" }}>
+            {tNav("disclaimer")}
           </Link>
         </span>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <Link href="/about"       style={{ color: "#9B9B9B", textDecoration: "none" }}>About</Link>
+          <Link href={`/${locale}/about`}       style={{ color: "#9B9B9B", textDecoration: "none" }}>{tNav("about")}</Link>
           <span style={{ color: "#C0C0C0" }}>·</span>
-          <Link href="/privacy"     style={{ color: "#9B9B9B", textDecoration: "none" }}>Privacy</Link>
+          <Link href={`/${locale}/privacy`}     style={{ color: "#9B9B9B", textDecoration: "none" }}>{tNav("privacy")}</Link>
           <span style={{ color: "#C0C0C0" }}>·</span>
-          <Link href="/en/features" style={{ color: "#7C3AED", textDecoration: "none" }}>Features</Link>
+          <Link href={`/${locale}/features`} style={{ color: "#7C3AED", textDecoration: "none" }}>{tNav("vote")}</Link>
           <span style={{ color: "#C0C0C0" }} className="hidden sm:inline">·</span>
-          <Link href="/contribute"  style={{ color: "#9B9B9B", textDecoration: "none" }} className="hidden sm:inline">Contribute</Link>
+          <Link href={`/${locale}/contribute`}  style={{ color: "#9B9B9B", textDecoration: "none" }} className="hidden sm:inline">{tNav("contribute")}</Link>
           <span style={{ color: "#C0C0C0" }} className="hidden sm:inline">·</span>
-          <span className="hidden sm:inline"><FeedbackModal label="Feedback" /></span>
+          <span className="hidden sm:inline"><FeedbackModal label={tNav("feedback")} /></span>
           <span style={{ color: "#C0C0C0" }} className="hidden sm:inline">·</span>
-          <Link href="/support"     style={{ color: "#DC2626", textDecoration: "none", fontWeight: 600 }}>Support ❤️</Link>
+          <Link href={`/${locale}/support`}     style={{ color: "#DC2626", textDecoration: "none", fontWeight: 600 }}>{tNav("support")} ❤️</Link>
           <span style={{ color: "#C0C0C0" }} className="hidden sm:inline">·</span>
           <a
             href="https://www.instagram.com/jayanth_m_b/"
@@ -112,7 +116,7 @@ export default function Footer() {
             style={{ color: "#6B6B6B", textDecoration: "none" }}
             className="hidden sm:inline"
           >
-            Built by Jayanth M B
+            {tFooter("builtBy")}
           </a>
         </div>
       </div>
